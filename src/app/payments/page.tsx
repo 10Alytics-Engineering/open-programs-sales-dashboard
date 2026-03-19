@@ -30,6 +30,7 @@ function PaymentsPageContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState(initialStatus);
   const [durationFilter, setDurationFilter] = useState(initialDuration);
+  const [loadingExport, setLoadingExport] = useState(false);
 
   useEffect(() => {
     const fetchPayments = async () => {
@@ -55,6 +56,7 @@ function PaymentsPageContent() {
       result = result.filter(p =>
         p.paymentStatus?.user?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         p.paymentStatus?.user?.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.paymentStatus?.user?.phone_number?.includes(searchQuery) ||
         p.transactionRef.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
@@ -70,55 +72,24 @@ function PaymentsPageContent() {
     setFilteredPayments(result);
   }, [searchQuery, statusFilter, payments]);
 
-  const handleExport = () => {
-    const htmlContent = `
-      <h1 style="font-family: Arial, sans-serif; text-align: center; color: #4f46e5;">10alytics Business - Payment Report</h1>
-      <p style="font-family: Arial, sans-serif; text-align: center; color: #64748b;">Generated on ${new Date().toLocaleDateString()}</p>
-      <table border="1" cellpadding="8" cellspacing="0" style="width: 100%; border-collapse: collapse; font-family: Arial, sans-serif; font-size: 11px;">
-        <thead>
-          <tr style="background-color: #f1f5f9;">
-            <th style="text-align: left;">Transaction Ref</th>
-            <th style="text-align: left;">Student Name</th>
-            <th style="text-align: left;">Email</th>
-            <th style="text-align: left;">Phone Number</th>
-            <th style="text-align: left;">Program/Course</th>
-            <th style="text-align: right;">Amount</th>
-            <th style="text-align: center;">Status</th>
-            <th style="text-align: left;">Payment Plan</th>
-            <th style="text-align: left;">Date</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${filteredPayments.map(p => `
-            <tr>
-              <td>${p.transactionRef}</td>
-              <td>${p.paymentStatus?.user?.name || "N/A"}</td>
-              <td>${p.paymentStatus?.user?.email || "N/A"}</td>
-              <td>${p.paymentStatus?.user?.phone_number || "N/A"}</td>
-              <td>${p.paymentStatus?.course?.title || "N/A"}</td>
-              <td style="text-align: right;">${formatPrice(p.amount)}</td>
-              <td style="text-align: center;">${p.status.toUpperCase()}</td>
-              <td>${p.paymentPlan?.replace(/_/g, ' ') || "N/A"}</td>
-              <td>${p.paymentDate ? formatDate(p.paymentDate) : "N/A"}</td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-    `;
-
-    const header = "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'></head><body>";
-    const footer = "</body></html>";
-    const sourceHTML = header + htmlContent + footer;
-
-    const blob = new Blob([sourceHTML], { type: 'application/msword' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `payments_report_${new Date().toISOString().split('T')[0]}.doc`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success("Payments exported as Document");
+  const handleExport = async () => {
+    setLoadingExport(true);
+    try {
+      const response = await api.post("/sales-dashboard/export-to-sheets");
+      if (response.data.success) {
+        toast.success(response.data.message || "Data successfully exported to Google Sheets");
+        if (response.data.sheetUrl) {
+          window.open(response.data.sheetUrl, "_blank");
+        }
+      } else {
+        toast.error(response.data.error || "Failed to export data");
+      }
+    } catch (error: any) {
+      console.error("Export error", error);
+      toast.error(error?.response?.data?.error || "Failed to export data to Google Sheets");
+    } finally {
+      setLoadingExport(false);
+    }
   };
 
   return (
@@ -130,10 +101,11 @@ function PaymentsPageContent() {
         </div>
         <button
           onClick={handleExport}
-          className="w-full md:w-auto bg-indigo-600 text-white px-6 py-3 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-indigo-700 transition shadow-lg shadow-indigo-200 active:scale-95 text-sm"
+          disabled={loadingExport}
+          className="w-full md:w-auto bg-indigo-600 text-white px-6 py-3 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-indigo-700 transition shadow-lg shadow-indigo-200 active:scale-95 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <FileText className="w-5 h-5" />
-          Export
+          {loadingExport ? <Loader2 className="w-5 h-5 animate-spin" /> : <FileText className="w-5 h-5" />}
+          Export to Sheets
         </button>
       </div>
 
@@ -143,7 +115,7 @@ function PaymentsPageContent() {
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
           <input
             type="text"
-            placeholder="Search by name, email or reference..."
+            placeholder="Search by name, email, phone or reference..."
             className="w-full bg-slate-50 border-none rounded-2xl py-3 pl-12 pr-4 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
