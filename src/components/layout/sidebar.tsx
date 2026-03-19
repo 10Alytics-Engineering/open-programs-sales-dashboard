@@ -31,7 +31,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
     <>
       {/* Mobile Overlay */}
       {isOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 lg:hidden transition-opacity duration-300"
           onClick={onClose}
         />
@@ -49,13 +49,13 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
                 <Image src="/logo.png" alt="Logo" width={32} height={32} />
               </div>
               <div className="flex flex-col">
-                <h1 className="text-sm font-black text-slate-900 leading-none uppercase tracking-tighter">Sales</h1>
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">10alytics</p>
+                <h1 className="text-sm font-black text-slate-900 leading-none uppercase tracking-tighter">Sales Dashboard</h1>
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">10alytics Business</p>
               </div>
             </div>
-            
+
             {/* Mobile Close Button */}
-            <button 
+            <button
               className="lg:hidden p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-colors"
               onClick={onClose}
             >
@@ -86,19 +86,19 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
           </nav>
         </div>
 
-      <div className="mt-auto p-6 border-t border-slate-100 space-y-2">
-        <button
-          className="w-full flex items-center gap-3 px-4 py-3 text-red-500 hover:bg-red-50 rounded-xl transition-all"
-          onClick={() => {
-            localStorage.removeItem("nebiant_admin_token");
-            window.location.href = "/login";
-          }}
-        >
-          <LogOut className="w-5 h-5" />
-          <span className="font-medium">Sign Out</span>
-        </button>
-      </div>
-    </aside>
-  </>
-);
+        <div className="mt-auto p-6 border-t border-slate-100 space-y-2">
+          <button
+            className="w-full flex items-center gap-3 px-4 py-3 text-red-500 hover:bg-red-50 rounded-xl transition-all"
+            onClick={() => {
+              localStorage.removeItem("nebiant_admin_token");
+              window.location.href = "/login";
+            }}
+          >
+            <LogOut className="w-5 h-5" />
+            <span className="font-medium">Sign Out</span>
+          </button>
+        </div>
+      </aside>
+    </>
+  );
 }
