@@ -10,7 +10,8 @@ import {
   ChevronRight,
   Loader2,
   Mail,
-  GraduationCap
+  GraduationCap,
+  Phone
 } from "lucide-react";
 import { User as UserType } from "@/types";
 import { toast } from "sonner";
@@ -101,6 +102,12 @@ export default function StudentsPage() {
                 <Mail className="w-3 h-3 shrink-0" />
                 <span className="text-[10px] md:text-xs font-bold truncate">{student.email}</span>
               </div>
+              {student.phone_number && (
+                <div className="flex items-center gap-1.5 text-slate-400 min-w-0 mt-1">
+                  <Phone className="w-3 h-3 shrink-0" />
+                  <span className="text-[10px] md:text-xs font-bold truncate">{student.phone_number}</span>
+                </div>
+              )}
             </div>
 
             <div className="space-y-3 pt-5 md:pt-6 border-t border-slate-50">

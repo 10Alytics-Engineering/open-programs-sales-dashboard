@@ -103,6 +103,7 @@ export default function PaymentDetailPage() {
                 <p className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Payer Details</p>
                 <p className="text-base md:text-lg font-black text-slate-900 leading-tight">{user?.name}</p>
                 <p className="text-[10px] md:text-sm font-bold text-slate-500">{user?.email}</p>
+                {user?.phone_number && <p className="text-[10px] md:text-sm font-bold text-slate-500">{user.phone_number}</p>}
               </div>
             </div>
 

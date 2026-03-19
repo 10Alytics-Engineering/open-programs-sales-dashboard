@@ -80,6 +80,7 @@ function PaymentsPageContent() {
             <th style="text-align: left;">Transaction Ref</th>
             <th style="text-align: left;">Student Name</th>
             <th style="text-align: left;">Email</th>
+            <th style="text-align: left;">Phone Number</th>
             <th style="text-align: left;">Program/Course</th>
             <th style="text-align: right;">Amount</th>
             <th style="text-align: center;">Status</th>
@@ -93,6 +94,7 @@ function PaymentsPageContent() {
               <td>${p.transactionRef}</td>
               <td>${p.paymentStatus?.user?.name || "N/A"}</td>
               <td>${p.paymentStatus?.user?.email || "N/A"}</td>
+              <td>${p.paymentStatus?.user?.phone_number || "N/A"}</td>
               <td>${p.paymentStatus?.course?.title || "N/A"}</td>
               <td style="text-align: right;">${formatPrice(p.amount)}</td>
               <td style="text-align: center;">${p.status.toUpperCase()}</td>
@@ -214,6 +216,11 @@ function PaymentsPageContent() {
                       <span className="text-[10px] text-slate-400 font-medium truncate max-w-[120px] md:max-w-none">
                         {payment.paymentStatus?.user?.email}
                       </span>
+                      {payment.paymentStatus?.user?.phone_number && (
+                        <span className="text-[10px] text-slate-500 font-medium truncate max-w-[120px] md:max-w-none mt-0.5">
+                          {payment.paymentStatus.user.phone_number}
+                        </span>
+                      )}
                     </div>
                   </td>
                   <td className="px-4 md:px-6 py-4 md:py-5 hidden sm:table-cell">
