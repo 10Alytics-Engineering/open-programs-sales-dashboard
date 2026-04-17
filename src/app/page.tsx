@@ -1,4 +1,5 @@
 "use client";
+import React from "react";
 
 import { useEffect, useState } from "react";
 import api from "@/lib/axios";
@@ -32,11 +33,34 @@ import {
 } from "lucide-react";
 import { DashboardData } from "@/types";
 import Link from "next/link";
+import { FileText } from "lucide-react";
+import { toast } from "sonner";
 
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [duration, setDuration] = useState("7d");
+  const [loadingExport, setLoadingExport] = useState(false);
+
+  const handleExport = async () => {
+    setLoadingExport(true);
+    try {
+      const response = await api.post("/sales-dashboard/export-to-sheets");
+      if (response.data.success) {
+        toast.success(response.data.message || "Data successfully exported to Google Sheets");
+        if (response.data.sheetUrl) {
+          window.open(response.data.sheetUrl, "_blank");
+        }
+      } else {
+        toast.error(response.data.error || "Failed to export data");
+      }
+    } catch (error: any) {
+      console.error("Export error", error);
+      toast.error(error?.response?.data?.error || "Failed to export data to Google Sheets");
+    } finally {
+      setLoadingExport(false);
+    }
+  };
 
   useEffect(() => {
     const fetchDashboard = async () => {
@@ -133,6 +157,14 @@ export default function DashboardPage() {
                     </button>
                 ))}
             </div>
+            <button
+                onClick={handleExport}
+                disabled={loadingExport}
+                className="group flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 border border-indigo-500 rounded-2xl text-[10px] font-black text-white hover:bg-indigo-700 transition-all uppercase tracking-widest shadow-lg shadow-indigo-100 disabled:opacity-50"
+            >
+                {loadingExport ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileText className="w-3.5 h-3.5" />}
+                Export Sheet
+            </button>
             <Link href="/payments" className="group flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-slate-100 rounded-2xl text-[10px] font-black text-slate-400 hover:text-indigo-600 hover:border-indigo-100 transition-all uppercase tracking-widest shadow-sm">
                 Full Report
                 <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
