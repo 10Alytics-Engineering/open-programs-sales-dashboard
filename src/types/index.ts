@@ -51,7 +51,9 @@ export interface Transaction {
   amount: string;
   status: string;
   paymentDate: string;
+  source?: string;
   paymentPlan?: string;
+  paymentGateway?: string;
   metadata?: string;
   paymentStatus?: PaymentStatus;
 }
