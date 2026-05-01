@@ -5,36 +5,76 @@ import { useEffect, useState } from "react";
 import api from "@/lib/axios";
 import { formatPrice, formatDate, cn } from "@/lib/utils";
 
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer, 
-  Cell,
-  PieChart,
-  Pie
-} from "recharts";
-import { 
-  DollarSign, 
-  Users, 
-  CreditCard, 
-  ArrowUpRight, 
+import {
+  Users,
+  CreditCard,
+  ArrowUpRight,
   ArrowDownRight,
   Loader2,
   CheckCircle2,
   Clock,
   AlertCircle,
+  AlertTriangle,
   Activity,
   ChevronRight,
-  Calendar
+  Calendar,
+  CalendarClock,
+  Wallet,
+  Receipt,
+  Banknote,
+  ListChecks,
+  FileText,
+  TrendingUp,
+  XCircle,
 } from "lucide-react";
 import { DashboardData } from "@/types";
 import Link from "next/link";
-import { FileText } from "lucide-react";
 import { toast } from "sonner";
+
+// ---------------------------------------------------------------------------
+// Currency catalogue (provided). NGN is the reporting/base currency.
+// ---------------------------------------------------------------------------
+const CURRENCY_SYMBOLS: Record<
+  string,
+  { name: string; symbol: string; channels: string[] }
+> = {
+  NGN: {
+    name: "NGN",
+    symbol: "₦",
+    channels: ["bank", "card", "bank_transfer", "ussd"],
+  },
+  GHS: { name: "GHS", symbol: "₵", channels: ["card", "mobile_money"] },
+  ZAR: { name: "ZAR", symbol: "R", channels: ["eft", "qr", "card"] },
+  KES: { name: "KES", symbol: "KSh", channels: ["card", "mobile_money"] },
+  UGX: { name: "UGX", symbol: "USh", channels: ["mobile_money"] },
+  RWF: { name: "RWF", symbol: "FRw", channels: ["mobile_money"] },
+};
+
+const BASE_CURRENCY = "NGN";
+
+const formatCurrency = (amount: number, currency: string = BASE_CURRENCY) => {
+  if (currency === BASE_CURRENCY) return formatPrice(amount);
+  const symbol = CURRENCY_SYMBOLS[currency]?.symbol ?? `${currency} `;
+  return `${symbol}${Number(amount).toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
+};
+
+// Compact NGN formatter for cards where space is tight.
+const formatCompactNGN = (amount: number) => {
+  if (!amount && amount !== 0) return "₦0";
+  if (amount >= 1_000_000) return `₦${(amount / 1_000_000).toFixed(1)}M`;
+  if (amount >= 1_000) return `₦${(amount / 1_000).toFixed(0)}K`;
+  return `₦${amount.toLocaleString()}`;
+};
+
+// Brand palette used for charts & breakdown bars (indigo-led, with accents).
+const COLORS = [
+  "#6366f1",
+  "#a855f7",
+  "#ec4899",
+  "#f43f5e",
+  "#f97316",
+  "#10b981",
+];
 
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
@@ -47,16 +87,21 @@ export default function DashboardPage() {
     try {
       const response = await api.post("/sales-dashboard/export-to-sheets");
       if (response.data.success) {
-        toast.success(response.data.message || "Data successfully exported to Google Sheets");
-        if (response.data.sheetUrl) {
+        toast.success(
+          response.data.message ||
+            "Data successfully exported to Google Sheets",
+        );
+        if (response.data.sheetUrl)
           window.open(response.data.sheetUrl, "_blank");
-        }
       } else {
         toast.error(response.data.error || "Failed to export data");
       }
     } catch (error: any) {
       console.error("Export error", error);
-      toast.error(error?.response?.data?.error || "Failed to export data to Google Sheets");
+      toast.error(
+        error?.response?.data?.error ||
+          "Failed to export data to Google Sheets",
+      );
     } finally {
       setLoadingExport(false);
     }
@@ -66,7 +111,9 @@ export default function DashboardPage() {
     const fetchDashboard = async () => {
       setLoading(true);
       try {
-        const response = await api.get(`/sales-dashboard/dashboard?duration=${duration}`);
+        const response = await api.get(
+          `/sales-dashboard/dashboard-all?duration=${duration}`,
+        );
         setData(response.data);
       } catch (error) {
         console.error("Failed to fetch dashboard data", error);
@@ -85,10 +132,63 @@ export default function DashboardPage() {
     );
   }
 
-  if (!data) return <div>Failed to load dashboard. Please check your connection.</div>;
+  if (!data)
+    return <div>Failed to load dashboard. Please check your connection.</div>;
 
-  const COLORS = ['#6366f1', '#a855f7', '#ec4899', '#f43f5e', '#f97316'];
+  // -------------------------------------------------------------------------
+  // Pull new fields with safe fallbacks. Backend may not have shipped these
+  // yet — render gracefully where missing instead of crashing.
+  // -------------------------------------------------------------------------
+  const d = data as any;
 
+  console.log("Raw dashboard data:", data);
+
+  const planStatus = d.planStatus ?? {
+    totalPlans: data.summary.activityStats.total,
+    paidInFull: data.summary.activityStats.success,
+    inProgress: 0,
+    overdue: 0,
+  };
+
+  const financials = d.financials ?? {
+    collected: data.summary.currentRevenue,
+    scheduled: 0,
+    contractValue: data.summary.currentRevenue,
+    atRisk: 0,
+  };
+
+  const planMix = d.planMix ?? {
+    oneTime: { count: 0, percent: 0 },
+    installment: { count: 0, percent: 0 },
+    avgPlanLength: null,
+    avgTimeToFullMonths: null,
+  };
+
+  const currencyBreakdown: Array<{
+    currency: string;
+    amountInBase: number;
+    nativeAmount?: number;
+    percent: number;
+  }> = d.currencyBreakdown ?? [];
+
+  const scheduledInstallments = d.scheduledInstallments ?? {
+    weeks: [] as Array<{ label: string; amount: number }>,
+    totalDue: financials.scheduled,
+    onTimeRate: null,
+  };
+
+  const overdueAging = d.overdueAging ?? {
+    "1-7": { amount: 0, count: 0 },
+    "8-30": { amount: 0, count: 0 },
+    "31-60": { amount: 0, count: 0 },
+    "60+": { amount: 0, count: 0 },
+  };
+
+  const topCourses: Array<any> = data.topCourses ?? [];
+
+  // -------------------------------------------------------------------------
+  // Header copy helpers (preserved from original).
+  // -------------------------------------------------------------------------
   const getTimelineDateRange = () => {
     if (duration === "all") return "Lifetime Accumulation";
     const pastDate = new Date();
@@ -97,270 +197,488 @@ export default function DashboardPage() {
     return `${formatDate(pastDate.toISOString())} - Today`;
   };
 
-  const dateRange = getTimelineDateRange();
-
   const getTimelineTitle = () => {
     switch (duration) {
-      case "30d": return "Monthly Sales Activity";
-      case "90d": return "Quarterly Sales Activity";
-      case "all": return "Lifetime Sales Activity";
-      default: return "Weekly Sales Activity";
-    }
-  };
-
-  const getTimelineSubtitle = () => {
-    switch (duration) {
-      case "30d": return "Last 30 Days Performance";
-      case "90d": return "Last 90 Days Performance";
-      case "all": return "Total Accumulated Performance";
-      default: return "Last 7 Days Performance";
+      case "30d":
+        return "Monthly Sales Activity";
+      case "90d":
+        return "Quarterly Sales Activity";
+      case "all":
+        return "Lifetime Sales Activity";
+      default:
+        return "Weekly Sales Activity";
     }
   };
 
   return (
     <div className="space-y-6 md:space-y-10 animate-in fade-in duration-500">
-      {/* Activity Timeline */}
+      {/* ============================================================== */}
+      {/* HEADER */}
+      {/* ============================================================== */}
       <section className="space-y-4 md:space-y-6 relative">
         <div className="absolute -inset-4 bg-indigo-50/30 rounded-[40px] -z-10 blur-2xl hidden md:block" />
-        
+
         <div className="flex flex-col xl:flex-row xl:items-end justify-between px-1 md:px-2 gap-4">
           <div className="flex items-center gap-3 md:gap-4">
             <div className="w-2 md:w-3 h-10 md:h-12 bg-indigo-600 rounded-full shadow-lg shadow-indigo-200" />
             <div>
-              <h2 className="text-xl md:text-2xl font-black text-slate-900 uppercase tracking-tighter leading-none mb-1 md:mb-2">{getTimelineTitle()}</h2>
+              <h2 className="text-xl md:text-2xl font-black text-slate-900 uppercase tracking-tighter leading-none mb-1 md:mb-2">
+                {getTimelineTitle()}
+              </h2>
               <div className="flex items-center gap-2 text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
                 <Calendar className="w-3 h-3 text-indigo-500" />
-                {dateRange}
+                {getTimelineDateRange()}
               </div>
             </div>
           </div>
-          
+
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             <div className="flex items-center bg-white p-1 rounded-2xl border border-slate-100 shadow-sm">
-                {[
-                    { val: "7d", label: "7D" },
-                    { val: "30d", label: "30D" },
-                    { val: "90d", label: "90D" },
-                    { val: "all", label: "ALL" }
-                ].map((p) => (
-                    <button
-                        key={p.val}
-                        onClick={() => setDuration(p.val)}
-                        className={cn(
-                            "flex-1 sm:flex-none px-3 md:px-4 py-2 rounded-xl text-[9px] md:text-[10px] font-black transition-all",
-                            duration === p.val 
-                                ? "bg-indigo-600 text-white shadow-md shadow-indigo-100" 
-                                : "text-slate-400 hover:text-slate-600"
-                        )}
-                    >
-                        {p.label}
-                    </button>
-                ))}
+              {[
+                { val: "7d", label: "7D" },
+                { val: "30d", label: "30D" },
+                { val: "90d", label: "90D" },
+                { val: "all", label: "ALL" },
+              ].map((p) => (
+                <button
+                  key={p.val}
+                  onClick={() => setDuration(p.val)}
+                  className={cn(
+                    "flex-1 sm:flex-none px-3 md:px-4 py-2 rounded-xl text-[9px] md:text-[10px] font-black transition-all",
+                    duration === p.val
+                      ? "bg-indigo-600 text-white shadow-md shadow-indigo-100"
+                      : "text-slate-400 hover:text-slate-600",
+                  )}
+                >
+                  {p.label}
+                </button>
+              ))}
             </div>
             <button
-                onClick={handleExport}
-                disabled={loadingExport}
-                className="group flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 border border-indigo-500 rounded-2xl text-[10px] font-black text-white hover:bg-indigo-700 transition-all uppercase tracking-widest shadow-lg shadow-indigo-100 disabled:opacity-50"
+              onClick={handleExport}
+              disabled={loadingExport}
+              className="group flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 border border-indigo-500 rounded-2xl text-[10px] font-black text-white hover:bg-indigo-700 transition-all uppercase tracking-widest shadow-lg shadow-indigo-100 disabled:opacity-50"
             >
-                {loadingExport ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileText className="w-3.5 h-3.5" />}
-                Export Sheet
+              {loadingExport ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <FileText className="w-3.5 h-3.5" />
+              )}
+              Export Sheet
             </button>
-            <Link href="/payments" className="group flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-slate-100 rounded-2xl text-[10px] font-black text-slate-400 hover:text-indigo-600 hover:border-indigo-100 transition-all uppercase tracking-widest shadow-sm">
-                Full Report
-                <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+            <Link
+              href="/payments"
+              className="group flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-slate-100 rounded-2xl text-[10px] font-black text-slate-400 hover:text-indigo-600 hover:border-indigo-100 transition-all uppercase tracking-widest shadow-sm"
+            >
+              Full Report
+              <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
             </Link>
           </div>
         </div>
 
+        {/* ============================================================== */}
+        {/* PLAN STATUS — replaces the original "Quick Action" cards */}
+        {/* ============================================================== */}
+        <SectionLabel>Plan Status</SectionLabel>
         <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-          <QuickActionCard 
-            label="Total Sales" 
-            value={data.summary.activityStats.total} 
-            icon={Activity} 
-            color="bg-slate-900" 
+          <QuickActionCard
+            label="Total Plans"
+            value={planStatus.totalPlans}
+            icon={Activity}
+            color="bg-slate-900"
             href={`/payments?duration=${duration}`}
           />
-          <QuickActionCard 
-            label="Successful" 
-            value={data.summary.activityStats.success} 
-            icon={CheckCircle2} 
-            color="bg-emerald-500" 
+          <QuickActionCard
+            label="Paid in Full"
+            value={planStatus.paidInFull}
+            icon={CheckCircle2}
+            color="bg-emerald-500"
             href={`/payments?status=success&duration=${duration}`}
             activeColor="text-emerald-500"
           />
-          <QuickActionCard 
-            label="Pending" 
-            value={data.summary.activityStats.pending} 
-            icon={Clock} 
-            color="bg-amber-500" 
-            href={`/payments?status=pending&duration=${duration}`}
-            activeColor="text-amber-500"
+          <QuickActionCard
+            label="In Progress"
+            value={planStatus.inProgress}
+            icon={Clock}
+            color="bg-indigo-500"
+            href={`/payments?status=in_progress&duration=${duration}`}
+            activeColor="text-indigo-500"
           />
-          <QuickActionCard 
-            label="Failed" 
-            value={data.summary.activityStats.failed} 
-            icon={AlertCircle} 
-            color="bg-rose-500" 
-            href={`/payments?status=failed&duration=${duration}`}
+          <QuickActionCard
+            label="Abandoned"
+            value={planStatus.abandoned}
+            icon={XCircle}
+            color="bg-slate-400"
+            href={`/payments?status=abandoned&duration=${duration}`}
+            activeColor="text-slate-500"
+          />
+          <QuickActionCard
+            label="Overdue"
+            value={planStatus.overdue}
+            icon={AlertCircle}
+            color="bg-rose-500"
+            href={`/payments?status=overdue&duration=${duration}`}
             activeColor="text-rose-500"
           />
         </div>
       </section>
 
-      {/* Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard 
-          title="Total Revenue" 
-          value={formatPrice(data.summary.currentRevenue)} 
-          change={data.summary.growthPercentage}
-          icon={DollarSign}
-          subtitle="Compared to last period"
-        />
-        <StatCard 
-          title="Total Transactions" 
-          value={data.summary.transactions.toLocaleString()} 
-          change={0} 
-          icon={CreditCard}
-          subtitle="Successful payments"
-        />
-        <StatCard 
-          title="Avg Transaction" 
-          value={formatPrice(data.summary.averageTransaction)} 
-          change={0} 
-          icon={ArrowUpRight}
-          subtitle="Average spend per user"
-        />
-        <StatCard 
-          title="Active Students" 
-          value={data.topCourses.reduce((sum, c) => sum + Number(c.enrollments), 0).toLocaleString()} 
-          change={0} 
-          icon={Users}
-          subtitle="Enrolled this year"
-        />
-      </div>
+      {/* ============================================================== */}
+      {/* FINANCIALS — replaces the original 4 StatCards */}
+      {/* ============================================================== */}
+      <section className="space-y-3">
+        <SectionLabel>Financials · {BASE_CURRENCY} equivalent</SectionLabel>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+          <StatCard
+            title="Total Revenue"
+            value={formatPrice(financials.collected)}
+            change={data.summary.growthPercentage}
+            icon={Wallet}
+            subtitle="Cash actually received"
+            tone="default"
+          />
+          <StatCard
+            title="Outstanding Payments"
+            value={formatPrice(financials.scheduled)}
+            change={0}
+            icon={CalendarClock}
+            subtitle="Due on installments"
+            tone="default"
+          />
+          <StatCard
+            title="Overdue Payments"
+            value={formatPrice(financials.atRisk)}
+            change={0}
+            icon={CreditCard}
+            subtitle="Average spend per user"
+            tone="default"
+          />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Revenue by Course Chart */}
-        <div className="bg-white p-4 md:p-6 rounded-3xl border border-slate-100 shadow-sm transition-hover hover:shadow-md overflow-hidden">
-          <h3 className="text-base md:text-lg font-bold mb-4 md:mb-6 flex items-center gap-2">
+          <StatCard
+            title="Active Students"
+            value={topCourses
+              .reduce(
+                (sum: number, c: any) => sum + Number(c.enrollments || 0),
+                0,
+              )
+              .toLocaleString()}
+            change={0}
+            icon={Users}
+            subtitle="Enrolled this period"
+            tone="default"
+          />
+        </div>
+      </section>
+
+      {/* ============================================================== */}
+      {/* ROW: One-time vs Installment | Currency Breakdown */}
+      {/* ============================================================== */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
+        {/* One-time vs Installment */}
+        <div className="bg-white p-5 md:p-6 rounded-3xl border border-slate-100 shadow-sm">
+          <div className="flex items-center justify-between mb-4 md:mb-6">
+            <h3 className="text-base md:text-lg font-black text-slate-900 flex items-center gap-2">
+              <ListChecks className="w-4 h-4 text-indigo-500" />
+              One-time vs Installment
+            </h3>
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+              Plan choice
+            </span>
+          </div>
+
+          {/* Stacked bar */}
+          <div className="flex h-2.5 rounded-full overflow-hidden mb-5 bg-slate-100">
+            <div
+              className="bg-indigo-500"
+              style={{ width: `${planMix.oneTime.percent || 0}%` }}
+            />
+            <div
+              className="bg-pink-400"
+              style={{ width: `${planMix.installment.percent || 0}%` }}
+            />
+          </div>
+
+          <div className="space-y-3 mb-5">
+            <LegendRow
+              label="One-time payment"
+              countLabel={`${planMix.oneTime.count ?? 0} plans`}
+              percent={planMix.oneTime.percent}
+              color="bg-indigo-500"
+            />
+            <LegendRow
+              label="Installments"
+              countLabel={`${planMix.installment.count ?? 0} plans`}
+              percent={planMix.installment.percent}
+              color="bg-pink-400"
+            />
+          </div>
+        </div>
+
+        {/* Currency Breakdown */}
+        <div className="bg-white p-5 md:p-6 rounded-3xl border border-slate-100 shadow-sm">
+          <div className="flex items-center justify-between mb-4 md:mb-6">
+            <h3 className="text-base md:text-lg font-black text-slate-900 flex items-center gap-2">
+              <Banknote className="w-4 h-4 text-indigo-500" />
+              Currency Breakdown
+            </h3>
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+              FX locked at payment
+            </span>
+          </div>
+
+          {currencyBreakdown.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-10 text-slate-400">
+              <Banknote className="w-8 h-8 mb-2 opacity-20" />
+              <p className="text-[10px] md:text-xs font-bold italic uppercase tracking-tighter">
+                No currency data yet
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="flex h-2.5 rounded-full overflow-hidden mb-5 bg-slate-100">
+                {currencyBreakdown.map((c, i) => (
+                  <div
+                    key={c.currency}
+                    style={{
+                      width: `${c.percent}%`,
+                      backgroundColor: COLORS[i % COLORS.length],
+                    }}
+                  />
+                ))}
+              </div>
+              <div className="space-y-2.5">
+                {currencyBreakdown.map((c, i) => (
+                  <div
+                    key={c.currency}
+                    className="flex items-center justify-between text-xs md:text-sm"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span
+                        className="w-2 h-2 rounded-full shrink-0"
+                        style={{ backgroundColor: COLORS[i % COLORS.length] }}
+                      />
+                      <span className="font-bold text-slate-700">
+                        {CURRENCY_SYMBOLS[c.currency]?.name ?? c.currency}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 md:gap-4 text-slate-500">
+                      <span className="font-medium tabular-nums">
+                        {c.nativeAmount != null
+                          ? formatCurrency(c.nativeAmount, c.currency)
+                          : formatCurrency(c.amountInBase, BASE_CURRENCY)}
+                      </span>
+                      <span className="font-black text-slate-900 w-10 text-right tabular-nums">
+                        {Math.round(c.percent)}%
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+      {/* ============================================================== */}
+      {/* TOP PERFORMING COURSES with plan mix */}
+      {/* ============================================================== */}
+      <div className="bg-white p-5 md:p-6 rounded-3xl border border-slate-100 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 md:mb-6">
+          <h3 className="text-base md:text-lg font-black text-slate-900">
             Top Performing Courses
           </h3>
-          <div className="h-[250px] md:h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data.topCourses}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis 
-                    dataKey="title" 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{fill: '#94a3b8', fontSize: 10}} 
-                    dy={10} 
-                    tickFormatter={(val) => val.length > 10 ? val.substring(0, 10) + '...' : val}
-                />
-                <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10}} tickFormatter={(val) => `₦${val/1000}k`} />
-                <Tooltip 
-                  cursor={{fill: '#f8fafc'}}
-                  contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                  formatter={(val: any) => [formatPrice(val), 'Revenue']}
-                />
-                <Bar dataKey="revenue" radius={[6, 6, 0, 0]} barSize={30}>
-                  {data.topCourses.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} fillOpacity={0.8} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+            Plan options · take-rate
+          </span>
         </div>
 
-        {/* Payment Plan Distribution */}
-        <div className="bg-white p-4 md:p-6 rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
-          <h3 className="text-base md:text-lg font-bold mb-4 md:mb-6">Payment Plan Distribution</h3>
-          <div className="h-[250px] md:h-[300px] w-full relative">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={data.paymentPlanDistribution}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={85}
-                  paddingAngle={5}
-                  dataKey="count"
-                  nameKey="paymentPlan"
-                >
-                  {data.paymentPlanDistribution.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip 
-                  contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
-              <span className="text-xl md:text-3xl font-bold block">{data.summary.transactions}</span>
-              <span className="text-[10px] md:text-sm text-slate-400 font-medium uppercase tracking-tighter">Total Sales</span>
-            </div>
+        {topCourses.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-10 text-slate-400">
+            <Activity className="w-8 h-8 mb-2 opacity-20" />
+            <p className="text-[10px] md:text-xs font-bold italic uppercase tracking-tighter">
+              No course revenue yet
+            </p>
           </div>
-          <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-4 md:mt-6">
-            {data.paymentPlanDistribution.map((plan, index) => (
-              <div key={plan.paymentPlan} className="flex items-center gap-2 min-w-0">
-                <div className="w-2 h-2 md:w-3 md:h-3 rounded-full shrink-0" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
-                <span className="text-[10px] md:text-xs font-semibold text-slate-600 truncate">{plan.paymentPlan.replace(/_/g, ' ')}</span>
-                <span className="text-[10px] md:text-xs font-bold text-slate-900 ml-auto shrink-0">{Math.round((plan.count / data.summary.transactions) * 100)}%</span>
-              </div>
-            ))}
+        ) : (
+          <div className="space-y-5">
+            {topCourses.slice(0, 5).map((course: any) => {
+              const mix: Array<{ plan: string; percent: number }> =
+                course.planMix ?? [];
+              return (
+                <div key={course.id ?? course.title}>
+                  <div className="flex items-baseline justify-between mb-2 gap-2">
+                    <p className="text-sm md:text-base font-black text-slate-900 truncate">
+                      {course.title}
+                    </p>
+                    <p className="text-xs md:text-sm font-bold text-slate-500 shrink-0 tabular-nums">
+                      {formatPrice(course.revenue)}
+                      <span className="text-slate-300 font-medium">
+                        {" "}
+                        · {course.enrollments} enrollments
+                      </span>
+                    </p>
+                  </div>
+
+                  {/* Stacked plan-mix bar */}
+                  {mix.length > 0 ? (
+                    <>
+                      <div className="flex h-2 rounded-full overflow-hidden mb-1.5 bg-slate-100">
+                        {mix.map((m, i) => (
+                          <div
+                            key={m.plan}
+                            style={{
+                              width: `${m.percent}%`,
+                              backgroundColor: COLORS[i % COLORS.length],
+                            }}
+                          />
+                        ))}
+                      </div>
+                      <div className="flex flex-wrap gap-3 text-[10px] md:text-[11px] text-slate-500 font-bold">
+                        {mix.map((m, i) => (
+                          <span
+                            key={m.plan}
+                            className="inline-flex items-center gap-1.5"
+                          >
+                            <span
+                              className="w-1.5 h-1.5 rounded-full"
+                              style={{
+                                backgroundColor: COLORS[i % COLORS.length],
+                              }}
+                            />
+                            {m.plan.replace(/_/g, " ")} ·{" "}
+                            {Math.round(m.percent)}%
+                          </span>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    // Fall back to a flat indigo bar when no plan mix is supplied.
+                    <div className="flex h-2 rounded-full overflow-hidden bg-slate-100">
+                      <div
+                        className="bg-indigo-500"
+                        style={{ width: "100%" }}
+                      />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
 }
 
-function StatCard({ title, value, change, icon: Icon, subtitle }: any) {
+// ===========================================================================
+// Helper components
+// ===========================================================================
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-[0.18em] px-1">
+      {children}
+    </p>
+  );
+}
+
+function StatCard({
+  title,
+  value,
+  change,
+  icon: Icon,
+  subtitle,
+  tone = "default",
+}: any) {
   const isPositive = change >= 0;
+  const isRisk = tone === "risk";
 
   return (
-    <div className="bg-white p-4 md:p-6 rounded-3xl border border-slate-100 shadow-sm transition-all hover:shadow-md hover:-translate-y-1">
+    <div
+      className={cn(
+        "bg-white p-4 md:p-6 rounded-3xl border shadow-sm transition-all hover:shadow-md hover:-translate-y-1",
+        isRisk ? "border-rose-100" : "border-slate-100",
+      )}
+    >
       <div className="flex justify-between items-start mb-3 md:mb-4">
-        <div className="p-2 md:p-3 bg-indigo-50 text-indigo-600 rounded-xl md:rounded-2xl">
+        <div
+          className={cn(
+            "p-2 md:p-3 rounded-xl md:rounded-2xl",
+            isRisk
+              ? "bg-rose-50 text-rose-600"
+              : "bg-indigo-50 text-indigo-600",
+          )}
+        >
           <Icon className="w-4 h-4 md:w-5 md:h-5" />
         </div>
         {change !== 0 && (
-          <div className={cn(
-            "flex items-center gap-0.5 md:gap-1 text-[10px] md:text-sm font-bold px-1.5 md:px-2 py-0.5 md:py-1 rounded-lg",
-            isPositive ? "text-emerald-600 bg-emerald-50" : "text-rose-600 bg-rose-50"
-          )}>
-            {isPositive ? <ArrowUpRight className="w-3 h-3 md:w-4 md:h-4" /> : <ArrowDownRight className="w-3 h-3 md:w-4 md:h-4" />}
+          <div
+            className={cn(
+              "flex items-center gap-0.5 md:gap-1 text-[10px] md:text-sm font-bold px-1.5 md:px-2 py-0.5 md:py-1 rounded-lg",
+              isPositive
+                ? "text-emerald-600 bg-emerald-50"
+                : "text-rose-600 bg-rose-50",
+            )}
+          >
+            {isPositive ? (
+              <ArrowUpRight className="w-3 h-3 md:w-4 md:h-4" />
+            ) : (
+              <ArrowDownRight className="w-3 h-3 md:w-4 md:h-4" />
+            )}
             {Math.abs(change).toFixed(1)}%
           </div>
         )}
       </div>
       <div>
-        <p className="text-[10px] md:text-sm font-bold text-slate-400 mb-0.5 md:mb-1 uppercase tracking-tight">{title}</p>
-        <h4 className="text-xl md:text-3xl font-black text-slate-900 mb-0.5 md:mb-1 leading-none">{value}</h4>
-        <p className="text-[9px] md:text-xs font-bold text-slate-400 italic">{subtitle}</p>
+        <p className="text-[10px] md:text-sm font-bold text-slate-400 mb-0.5 md:mb-1 uppercase tracking-tight">
+          {title}
+        </p>
+        <h4
+          className={cn(
+            "text-xl md:text-3xl font-black mb-0.5 md:mb-1 leading-none",
+            isRisk ? "text-rose-600" : "text-slate-900",
+          )}
+        >
+          {value}
+        </h4>
+        <p className="text-[9px] md:text-xs font-bold text-slate-400 italic">
+          {subtitle}
+        </p>
       </div>
     </div>
   );
 }
 
-function QuickActionCard({ label, value, icon: Icon, color, href, activeColor }: any) {
+function QuickActionCard({
+  label,
+  value,
+  icon: Icon,
+  color,
+  href,
+  activeColor,
+}: any) {
   return (
-    <Link 
+    <Link
       href={href}
       className="bg-white p-3 md:p-5 rounded-2xl md:rounded-[32px] border border-slate-100 shadow-sm flex items-center gap-2 md:gap-4 transition-all hover:border-indigo-200 hover:shadow-md active:scale-95 group min-w-0"
     >
-      <div className={cn(
-        "w-8 h-8 md:w-12 md:h-12 rounded-lg md:rounded-2xl flex items-center justify-center text-white shrink-0 shadow-lg transition-transform group-hover:scale-110 duration-300",
-        color
-      )}>
+      <div
+        className={cn(
+          "w-8 h-8 md:w-12 md:h-12 rounded-lg md:rounded-2xl flex items-center justify-center text-white shrink-0 shadow-lg transition-transform group-hover:scale-110 duration-300",
+          color,
+        )}
+      >
         <Icon className="w-4 h-4 md:w-6 md:h-6" />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-[8px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-0.5 md:mb-1">{label}</p>
-        <p className={cn("text-sm md:text-2xl font-black leading-none truncate", activeColor || "text-slate-900")}>
+        <p className="text-[8px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-0.5 md:mb-1">
+          {label}
+        </p>
+        <p
+          className={cn(
+            "text-sm md:text-2xl font-black leading-none truncate",
+            activeColor || "text-slate-900",
+          )}
+        >
           {value}
         </p>
       </div>
@@ -371,3 +689,83 @@ function QuickActionCard({ label, value, icon: Icon, color, href, activeColor }:
   );
 }
 
+function LegendRow({
+  label,
+  countLabel,
+  percent,
+  color,
+}: {
+  label: string;
+  countLabel: string;
+  percent: number;
+  color: string;
+}) {
+  return (
+    <div className="flex items-center justify-between text-xs md:text-sm">
+      <div className="flex items-center gap-2">
+        <span className={cn("w-2 h-2 rounded-full", color)} />
+        <span className="font-bold text-slate-700">{label}</span>
+      </div>
+      <div className="flex items-center gap-4 text-slate-500">
+        <span className="font-medium">{countLabel}</span>
+        <span className="font-black text-slate-900 w-10 text-right tabular-nums">
+          {Math.round(percent || 0)}%
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function AgingCard({
+  label,
+  bucket,
+  tone,
+}: {
+  label: string;
+  bucket: { amount: number; count: number };
+  tone: "amber" | "rose";
+}) {
+  const styles =
+    tone === "amber"
+      ? {
+          bg: "bg-amber-50",
+          border: "border-amber-100",
+          text: "text-amber-700",
+          subtext: "text-amber-600",
+        }
+      : {
+          bg: "bg-rose-50",
+          border: "border-rose-100",
+          text: "text-rose-700",
+          subtext: "text-rose-600",
+        };
+
+  return (
+    <div className={cn("p-4 rounded-2xl border", styles.bg, styles.border)}>
+      <p
+        className={cn(
+          "text-[10px] font-black uppercase tracking-widest mb-2",
+          styles.subtext,
+        )}
+      >
+        {label}
+      </p>
+      <p
+        className={cn(
+          "text-lg md:text-xl font-black tracking-tight",
+          styles.text,
+        )}
+      >
+        {formatPrice(bucket?.amount || 0)}
+      </p>
+      <p
+        className={cn(
+          "text-[10px] md:text-xs font-bold mt-0.5",
+          styles.subtext,
+        )}
+      >
+        {bucket?.count || 0} plans
+      </p>
+    </div>
+  );
+}
