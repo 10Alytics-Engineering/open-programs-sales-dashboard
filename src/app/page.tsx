@@ -5,16 +5,6 @@ import { useEffect, useState } from "react";
 import api from "@/lib/axios";
 import { formatPrice, formatDate, cn } from "@/lib/utils";
 
-// import {
-//   BarChart,
-//   Bar,
-//   XAxis,
-//   YAxis,
-//   CartesianGrid,
-//   Tooltip,
-//   ResponsiveContainer,
-//   Cell,
-// } from "recharts";
 import {
   Users,
   CreditCard,
@@ -35,6 +25,7 @@ import {
   ListChecks,
   FileText,
   TrendingUp,
+  XCircle,
 } from "lucide-react";
 import { DashboardData } from "@/types";
 import Link from "next/link";
@@ -314,6 +305,14 @@ export default function DashboardPage() {
             activeColor="text-indigo-500"
           />
           <QuickActionCard
+            label="Abandoned"
+            value={planStatus.abandoned}
+            icon={XCircle}
+            color="bg-slate-400"
+            href={`/payments?status=abandoned&duration=${duration}`}
+            activeColor="text-slate-500"
+          />
+          <QuickActionCard
             label="Overdue"
             value={planStatus.overdue}
             icon={AlertCircle}
@@ -331,7 +330,7 @@ export default function DashboardPage() {
         <SectionLabel>Financials · {BASE_CURRENCY} equivalent</SectionLabel>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
           <StatCard
-            title="Collected"
+            title="Total Revenue"
             value={formatPrice(financials.collected)}
             change={data.summary.growthPercentage}
             icon={Wallet}
@@ -339,7 +338,7 @@ export default function DashboardPage() {
             tone="default"
           />
           <StatCard
-            title="Scheduled"
+            title="Outstanding Payments"
             value={formatPrice(financials.scheduled)}
             change={0}
             icon={CalendarClock}
@@ -347,19 +346,25 @@ export default function DashboardPage() {
             tone="default"
           />
           <StatCard
-            title="Contract Value"
-            value={formatPrice(financials.contractValue)}
-            change={0}
-            icon={Receipt}
-            subtitle="Collected + scheduled"
-            tone="default"
-          />
-          <StatCard
-            title="Avg Transaction"
-            value={formatPrice(data.summary.averageTransaction)}
+            title="Overdue Payments"
+            value={formatPrice(financials.atRisk)}
             change={0}
             icon={CreditCard}
             subtitle="Average spend per user"
+            tone="default"
+          />
+
+          <StatCard
+            title="Active Students"
+            value={topCourses
+              .reduce(
+                (sum: number, c: any) => sum + Number(c.enrollments || 0),
+                0,
+              )
+              .toLocaleString()}
+            change={0}
+            icon={Users}
+            subtitle="Enrolled this period"
             tone="default"
           />
         </div>
@@ -406,29 +411,6 @@ export default function DashboardPage() {
               percent={planMix.installment.percent}
               color="bg-pink-400"
             />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-100">
-            <div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
-                Avg plan length
-              </p>
-              <p className="text-base md:text-lg font-black text-slate-900">
-                {planMix.avgPlanLength
-                  ? `${planMix.avgPlanLength} payments`
-                  : "—"}
-              </p>
-            </div>
-            <div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
-                Avg time to full
-              </p>
-              <p className="text-base md:text-lg font-black text-slate-900">
-                {planMix.avgTimeToFullMonths
-                  ? `${planMix.avgTimeToFullMonths} months`
-                  : "—"}
-              </p>
-            </div>
           </div>
         </div>
 
@@ -496,90 +478,6 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
-
-      {/* ============================================================== */}
-      {/* SCHEDULED INSTALLMENTS */}
-      {/* ============================================================== */}
-      {/* <div className="bg-white p-5 md:p-6 rounded-3xl border border-slate-100 shadow-sm">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 md:mb-6">
-          <h3 className="text-base md:text-lg font-black text-slate-900 flex items-center gap-2">
-            <CalendarClock className="w-4 h-4 text-indigo-500" />
-            Scheduled Installments
-          </h3>
-          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-            Next 8 weeks · receipts due
-          </span>
-        </div>
-
-        <div className="h-[200px] md:h-[240px] w-full">
-          {scheduledInstallments.weeks.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-slate-400">
-              <CalendarClock className="w-8 h-8 mb-2 opacity-20" />
-              <p className="text-[10px] md:text-xs font-bold italic uppercase tracking-tighter">
-                No upcoming installments
-              </p>
-            </div>
-          ) : (
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={scheduledInstallments.weeks}>
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  vertical={false}
-                  stroke="#f1f5f9"
-                />
-                <XAxis
-                  dataKey="label"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: "#94a3b8", fontSize: 10 }}
-                  dy={6}
-                />
-                <YAxis
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: "#94a3b8", fontSize: 10 }}
-                  tickFormatter={(val) => formatCompactNGN(val)}
-                />
-                <Tooltip
-                  cursor={{ fill: "#f8fafc" }}
-                  contentStyle={{
-                    borderRadius: "16px",
-                    border: "none",
-                    boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1)",
-                  }}
-                  formatter={(val: any) => [formatPrice(val), "Due"]}
-                />
-                <Bar
-                  dataKey="amount"
-                  radius={[6, 6, 0, 0]}
-                  barSize={28}
-                  fill="#6366f1"
-                  fillOpacity={0.85}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          )}
-        </div>
-
-        <div className="flex flex-col sm:flex-row sm:justify-between gap-2 pt-4 mt-2 border-t border-slate-100 text-[11px] md:text-xs">
-          <div className="flex items-center gap-2 text-slate-500 font-bold">
-            <span>Total due:</span>
-            <span className="text-slate-900 font-black tabular-nums">
-              {formatPrice(scheduledInstallments.totalDue || 0)}
-            </span>
-          </div>
-          {scheduledInstallments.onTimeRate != null && (
-            <div className="flex items-center gap-2 text-slate-500 font-bold">
-              <TrendingUp className="w-3 h-3 text-emerald-500" />
-              <span>Historical on-time rate:</span>
-              <span className="text-slate-900 font-black tabular-nums">
-                {scheduledInstallments.onTimeRate}%
-              </span>
-            </div>
-          )}
-        </div>
-      </div> */}
-
       {/* ============================================================== */}
       {/* TOP PERFORMING COURSES with plan mix */}
       {/* ============================================================== */}
@@ -666,23 +564,6 @@ export default function DashboardPage() {
             })}
           </div>
         )}
-      </div>
-
-      {/* Active students — preserved as a small footer stat */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <StatCard
-          title="Active Students"
-          value={topCourses
-            .reduce(
-              (sum: number, c: any) => sum + Number(c.enrollments || 0),
-              0,
-            )
-            .toLocaleString()}
-          change={0}
-          icon={Users}
-          subtitle="Enrolled this period"
-          tone="default"
-        />
       </div>
     </div>
   );

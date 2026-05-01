@@ -146,7 +146,7 @@ export default function PaymentDetailPage() {
   const showConversion = currency !== BASE_CURRENCY && amountInBase;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 animate-in slide-in-from-bottom-4 duration-500">
+    <div className="max-w-4xl mx-auto space-y-8 animate-in slide-in-from-bottom-4 duration-500 relative">
       <button
         onClick={() => router.back()}
         className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-indigo-600 transition"
@@ -297,7 +297,7 @@ export default function PaymentDetailPage() {
                 <span className="text-indigo-100/60 font-bold uppercase tracking-tighter">
                   Plan Status
                 </span>
-                <span className="font-black italic uppercase italic tracking-tighter text-indigo-100">
+                <span className="font-black uppercase italic tracking-tighter text-indigo-100">
                   {payment.paymentStatus?.status.replace(/_/g, " ")}
                 </span>
               </div>
@@ -307,7 +307,7 @@ export default function PaymentDetailPage() {
                 </span>
                 <span className="font-black tracking-tighter text-indigo-100">
                   {course?.price
-                    ? displayAmount(course.price, currency)
+                    ? displayAmount(course.price, BASE_CURRENCY)
                     : "---"}
                 </span>
               </div>
@@ -395,7 +395,7 @@ export default function PaymentDetailPage() {
                   </div>
                   <div className="flex items-center justify-between sm:justify-end gap-4 md:gap-6 pt-2 sm:pt-0 border-t sm:border-none border-slate-200/50">
                     <p className="text-base md:text-lg font-black text-slate-900 tracking-tighter italic">
-                      {displayAmount(inst.amount, currency)}
+                      {displayAmount(inst.amount, BASE_CURRENCY)}
                     </p>
                     <div
                       className={cn(

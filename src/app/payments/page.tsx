@@ -21,6 +21,13 @@ import { toast } from "sonner";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 
+const PLAN_STATUS_VALUES = [
+  "paid_in_full",
+  "in_progress",
+  "overdue",
+  "abandoned",
+];
+
 function PaymentsPageContent() {
   const searchParams = useSearchParams();
   const initialStatus = searchParams.get("status") || "all";
@@ -50,15 +57,18 @@ function PaymentsPageContent() {
     const fetchPayments = async () => {
       setLoading(true);
       try {
+        const params = new URLSearchParams({ duration: durationFilter });
+        if (statusFilter !== "all") params.set("status", statusFilter);
+        if (gatewayFilter !== "all") params.set("gateway", gatewayFilter);
+
         const response = await api.get(
-          `/sales-dashboard/transactions?duration=${durationFilter}`,
+          `/sales-dashboard/transactions?${params.toString()}`,
         );
-        // API now returns { transactions, count, countBySource } instead of a bare array.
         const { transactions, count, countBySource: breakdown } = response.data;
         setPayments(transactions);
         setFilteredPayments(transactions);
         setTotalCount(count);
-        setCountBySource(breakdown ?? { paystack: 0, unified: 0 });
+        setCountBySource(breakdown ?? { paystack: 0, startButton: 0 });
       } catch (error) {
         console.error("Failed to fetch payments", error);
         toast.error("Failed to load payments");
@@ -67,7 +77,7 @@ function PaymentsPageContent() {
       }
     };
     fetchPayments();
-  }, [durationFilter]);
+  }, [durationFilter, statusFilter, gatewayFilter]);
 
   useEffect(() => {
     let result = payments;
@@ -85,32 +95,8 @@ function PaymentsPageContent() {
       );
     }
 
-    if (statusFilter !== "all") {
-      if (statusFilter === "failed") {
-        result = result.filter(
-          (p) => p.status === "failed" || p.status === "expired",
-        );
-      } else {
-        result = result.filter((p) => p.status === statusFilter);
-      }
-    }
-
-    if (gatewayFilter !== "all" && gatewayFilter !== "") {
-      result = result.filter((p) => {
-        // Legacy rows from the paystackTransaction table have source="paystack" and no paymentGateway.
-        // Rows from the unified PaymentTransaction table have paymentGateway set to the enum value.
-        if (gatewayFilter === "PAYSTACK") {
-          return (
-            p.source === "paystack" ||
-            p.paymentGateway?.toLowerCase() === "PAYSTACK"
-          );
-        }
-        return p.paymentGateway === gatewayFilter;
-      });
-    }
-
     setFilteredPayments(result);
-  }, [searchQuery, statusFilter, gatewayFilter, payments]);
+  }, [searchQuery, payments]);
 
   const handleExport = async () => {
     setLoadingExport(true);
@@ -229,6 +215,9 @@ function PaymentsPageContent() {
               <option value="success">Successful</option>
               <option value="pending">Pending</option>
               <option value="failed">Failed</option>
+              <option value="in_progress">In progress</option>
+              <option value="overdue">Overdue</option>
+              <option value="abandoned">Abandoned</option>
             </select>
           </div>
           <div className="relative">
