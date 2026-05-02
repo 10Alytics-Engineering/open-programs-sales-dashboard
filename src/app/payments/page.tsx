@@ -15,11 +15,11 @@ import {
   CreditCard,
 } from "lucide-react";
 import { Transaction } from "@/types";
-import Papa from "papaparse";
 import { toast } from "sonner";
 
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
+import PaymentStatus from "@/components/payment/payment-status";
 
 const PLAN_STATUS_VALUES = [
   "paid_in_full",
@@ -30,7 +30,7 @@ const PLAN_STATUS_VALUES = [
 
 function PaymentsPageContent() {
   const searchParams = useSearchParams();
-  const initialStatus = searchParams.get("status") || "all";
+  const initialStatus = searchParams.get("status") || "success";
   const initialDuration = searchParams.get("duration") || "all";
   const initialGateway = searchParams.get("gateway") || "all";
 
@@ -215,7 +215,7 @@ function PaymentsPageContent() {
               <option value="success">Successful</option>
               <option value="pending">Pending</option>
               <option value="failed">Failed</option>
-              <option value="in_progress">In progress</option>
+              <option value="in_progress">In Progress</option>
               <option value="overdue">Overdue</option>
               <option value="abandoned">Abandoned</option>
             </select>
@@ -327,18 +327,7 @@ function PaymentsPageContent() {
                       </span>
                     </td>
                     <td className="px-4 md:px-6 py-4 md:py-5">
-                      <span
-                        className={cn(
-                          "px-2 md:px-3 py-1 rounded-full text-[8px] md:text-[10px] font-bold uppercase tracking-wider whitespace-nowrap",
-                          payment.status === "success"
-                            ? "bg-emerald-50 text-emerald-600 border border-emerald-100"
-                            : payment.status === "pending"
-                              ? "bg-amber-50 text-amber-600 border border-amber-100"
-                              : "bg-rose-50 text-rose-600 border border-rose-100",
-                        )}
-                      >
-                        {payment.status}
-                      </span>
+                      <PaymentStatus payment={payment} />
                     </td>
                     <td className="px-4 md:px-6 py-4 md:py-5 whitespace-nowrap hidden lg:table-cell">
                       <span className="text-[11px] font-bold text-slate-500">
