@@ -15,7 +15,6 @@ import {
   CreditCard,
 } from "lucide-react";
 import { Transaction } from "@/types";
-import Papa from "papaparse";
 import { toast } from "sonner";
 
 import { useSearchParams } from "next/navigation";
@@ -30,7 +29,7 @@ const PLAN_STATUS_VALUES = [
 
 function PaymentsPageContent() {
   const searchParams = useSearchParams();
-  const initialStatus = searchParams.get("status") || "all";
+  const initialStatus = searchParams.get("status") || "success";
   const initialDuration = searchParams.get("duration") || "all";
   const initialGateway = searchParams.get("gateway") || "all";
 
@@ -215,7 +214,7 @@ function PaymentsPageContent() {
               <option value="success">Successful</option>
               <option value="pending">Pending</option>
               <option value="failed">Failed</option>
-              <option value="in_progress">In progress</option>
+              <option value="in_progress">In Progress</option>
               <option value="overdue">Overdue</option>
               <option value="abandoned">Abandoned</option>
             </select>

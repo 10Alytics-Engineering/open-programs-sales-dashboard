@@ -350,7 +350,7 @@ export default function PaymentDetailPage() {
               Installment Schedule
             </h3>
             <span className="text-[10px] md:text-xs font-bold text-slate-400 bg-slate-50 px-3 py-1 rounded-full w-fit">
-              {installments.length} Installments Defined
+              {installments.length} Installments
             </span>
           </div>
 
