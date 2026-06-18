@@ -26,8 +26,10 @@ export default function LoginPage() {
       const token = user?.access_token;
 
       // Role check: Only ADMIN or COURSE_ADMIN can access
-      if (!user || (user.role !== "ADMIN" && user.role !== "COURSE_ADMIN")) {
-        setError("Access Denied: You do not have the required permissions to access this dashboard.");
+      if (!user || (user.role !== "ADMIN" && user.role !== "SUPER_ADMIN")) {
+        setError(
+          "Access Denied: You do not have the required permissions to access this dashboard.",
+        );
         setLoading(false);
         return;
       }
@@ -40,7 +42,10 @@ export default function LoginPage() {
       router.push("/");
     } catch (err: any) {
       console.error("Login error:", err);
-      setError(err.response?.data?.message || "Invalid email or password. Please try again.");
+      setError(
+        err.response?.data?.message ||
+          "Invalid email or password. Please try again.",
+      );
     } finally {
       setLoading(false);
     }
@@ -60,25 +65,39 @@ export default function LoginPage() {
             <div className="mb-8 relative">
               <div className="absolute inset-0 bg-indigo-500/10 blur-xl rounded-full scale-150 animate-pulse" />
               <div className="relative w-20 h-20 bg-white rounded-[28px] shadow-xl shadow-indigo-50 flex items-center justify-center p-4">
-                <Image src="/logo.png" alt="Logo" width={48} height={48} className="object-contain" />
+                <Image
+                  src="/logo.png"
+                  alt="Logo"
+                  width={48}
+                  height={48}
+                  className="object-contain"
+                />
               </div>
             </div>
 
             <div className="text-center mb-10">
-              <h1 className="text-2xl font-black text-slate-900 mb-1 uppercase tracking-tighter">Sales Dashboard</h1>
-              <p className="text-slate-400 font-bold text-xs uppercase tracking-[0.2em] leading-none">10alytics Business</p>
+              <h1 className="text-2xl font-black text-slate-900 mb-1 uppercase tracking-tighter">
+                Sales Dashboard
+              </h1>
+              <p className="text-slate-400 font-bold text-xs uppercase tracking-[0.2em] leading-none">
+                10alytics Business
+              </p>
             </div>
 
             {error && (
               <div className="w-full mb-6 bg-rose-50 border border-rose-100 p-4 rounded-2xl flex items-start gap-3 animate-in slide-in-from-top-2">
                 <AlertCircle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
-                <p className="text-sm font-bold text-rose-600 leading-tight">{error}</p>
+                <p className="text-sm font-bold text-rose-600 leading-tight">
+                  {error}
+                </p>
               </div>
             )}
 
             <form onSubmit={handleLogin} className="w-full space-y-5">
               <div className="space-y-2">
-                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">
+                  Email Address
+                </label>
                 <div className="relative">
                   <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 w-5 h-5" />
                   <input
@@ -93,7 +112,9 @@ export default function LoginPage() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Password</label>
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">
+                  Password
+                </label>
                 <div className="relative">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 w-5 h-5" />
                   <input
@@ -112,7 +133,11 @@ export default function LoginPage() {
                 disabled={loading}
                 className="w-full bg-indigo-600 text-white font-black py-4 rounded-2xl shadow-lg shadow-indigo-100 hover:bg-indigo-700 hover:shadow-indigo-200 transition-all active:scale-[0.98] disabled:opacity-70 disabled:active:scale-100 uppercase tracking-widest text-xs mt-4 flex items-center justify-center"
               >
-                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Sign In"}
+                {loading ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  "Sign In"
+                )}
               </button>
             </form>
           </div>
@@ -120,4 +145,4 @@ export default function LoginPage() {
       </div>
     </div>
   );
-} 
+}
