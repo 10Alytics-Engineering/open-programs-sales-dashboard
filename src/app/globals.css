@@ -61,6 +61,10 @@ table th {
   @apply select-none;
 }
 
+button {
+  @apply cursor-pointer;
+}
+
 /* Hide arrow from number input */
 input::-webkit-outer-spin-button,
 input::-webkit-inner-spin-button {
