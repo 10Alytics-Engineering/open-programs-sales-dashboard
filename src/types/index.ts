@@ -43,20 +43,55 @@ export interface PaymentInstallment {
   installmentNumber: number;
 }
 
-export interface Transaction {
+export type Transaction = {
   id: string;
-  transactionRef: string;
+  transactionRef?: string | null;
   userId: string;
   courseId: string;
-  amount: string;
+  paymentType?: string | null;
+  paymentPlan?: string | null;
+  paymentStatusId?: string | null;
+  amount: string | number;
   status: string;
-  paymentDate: string;
-  source?: string;
-  paymentPlan?: string;
-  paymentGateway?: string;
-  metadata?: string;
-  paymentStatus?: PaymentStatus;
-}
+  paymentDate?: string | null;
+  authorizationUrl?: string | null;
+  metadata?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  source?: "paystack" | "unified";
+  paymentGateway?: "PAYSTACK" | "STRIPE" | "START_BUTTON";
+
+  metadataParsed?: Record<string, any>;
+  isInstallmentPayment?: boolean;
+  matchedInstallment?: {
+    id: string;
+    amount: number;
+    dueDate: string;
+    paid: boolean;
+    installmentNumber: number;
+  } | null;
+
+  paymentStatus?: {
+    id?: string;
+    status?: string;
+    paymentPlan?: string | null;
+    user?: {
+      id: string;
+      name: string;
+      email?: string | null;
+      phone_number?: string | null;
+    } | null;
+    course?: {
+      id: string;
+      title: string;
+      price?: string | null;
+    } | null;
+    cohort?: {
+      id: string;
+      name: string;
+    } | null;
+  } | null;
+};
 
 export interface DashboardSummary {
   currentRevenue: number;
@@ -96,3 +131,37 @@ export interface DashboardData {
     previous: { start: string; end: string };
   };
 }
+
+export interface PaymentPlanTotals {
+  expectedAmount: number;
+  paidAmount: number;
+  pendingAmount: number;
+  overdueAmount: number;
+  installmentExpected: number;
+}
+
+export interface PaymentPlanRecord extends PaymentStatus {
+  state: "paid_in_full" | "overdue" | "in_progress" | "pending" | "expired";
+  expectedAmount?: number;
+  currency?: string;
+  notes?: string;
+  manuallyCreated?: boolean;
+  totals: PaymentPlanTotals;
+  installmentSummary: {
+    total: number;
+    paid: number;
+    unpaid: number;
+    overdue: number;
+  };
+  transactions: Transaction[];
+  paystackTransactions?: Transaction[];
+}
+
+export type PaginationMeta = {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+};
