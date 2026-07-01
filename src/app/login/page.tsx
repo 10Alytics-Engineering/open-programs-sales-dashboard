@@ -77,7 +77,7 @@ export default function LoginPage() {
 
             <div className="text-center mb-10">
               <h1 className="text-2xl font-black text-slate-900 mb-1 uppercase tracking-tighter">
-                Sales Dashboard
+                Finance Dashboard
               </h1>
               <p className="text-slate-400 font-bold text-xs uppercase tracking-[0.2em] leading-none">
                 10alytics Business
