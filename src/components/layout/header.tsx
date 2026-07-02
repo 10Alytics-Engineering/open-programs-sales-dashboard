@@ -4,25 +4,15 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { User } from "@/types";
 import { Menu } from "lucide-react";
+import { useCurrentAdminUser } from "@/lib/use-user";
 
 export default function Header({
   onOpenSidebar,
 }: {
   onOpenSidebar?: () => void;
 }) {
-  const [user, setUser] = useState<User | null>(null);
+  const { user } = useCurrentAdminUser();
   const pathname = usePathname();
-
-  useEffect(() => {
-    const userStr = localStorage.getItem("nebiant_admin_user");
-    if (userStr) {
-      try {
-        setUser(JSON.parse(userStr));
-      } catch (e) {
-        console.error("Failed to parse user info");
-      }
-    }
-  }, []);
 
   if (pathname === "/login") return null;
 
@@ -45,7 +35,7 @@ export default function Header({
             {user?.name || "Admin User"}
           </span>
           <span className="text-[10px] text-indigo-600 font-medium bg-indigo-50 px-2 py-0.5 rounded-full capitalize">
-            {user?.role?.replace(/_/g, " ") || "Course Admin"}
+            {user?.role?.replace(/_/g, " ") || ""}
           </span>
         </div>
         <div className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 border-2 border-white shadow-sm shadow-indigo-100 flex items-center justify-center text-white font-black text-xs">

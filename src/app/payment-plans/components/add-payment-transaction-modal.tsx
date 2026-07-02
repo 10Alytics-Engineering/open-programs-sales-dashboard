@@ -90,7 +90,7 @@ export function AddPaymentTransactionModal({
 
           <button
             onClick={onClose}
-            className="w-10 h-10 rounded-2xl bg-slate-50 text-slate-500 flex items-center justify-center hover:bg-slate-100"
+            className="w-10 h-10 cursor-pointer rounded-2xl bg-slate-50 text-slate-500 flex items-center justify-center hover:bg-slate-100"
           >
             <X className="w-4 h-4" />
           </button>
