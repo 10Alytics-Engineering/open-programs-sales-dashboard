@@ -1,3 +1,233 @@
+interface PurchaseType {
+  course: any;
+  id: string;
+  userId: string;
+  courseId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CohortType = {
+  id: string;
+  name: string;
+  startDate?: Date;
+  endDate?: Date | null;
+  courseId?: string;
+  course: CourseType;
+  users: UserCohortType[];
+  cohortCourses: CohortCourse[];
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type UserCohortType = {
+  id: string;
+  courseId?: string;
+  cohortId: string;
+  cohort: CohortType;
+  userId?: string;
+  user: User;
+  isPaymentActive: boolean;
+  isActive: boolean;
+  archivedAt?: Date;
+  previousEnrollmentId?: string;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type CohortCourseWeek = {
+  id: string;
+  title?: string;
+  iconUrl?: string;
+  cohortCourseId?: string;
+  isPublished?: boolean;
+};
+
+export type CohortCourseTimetable = {
+  id?: string;
+  name?: string;
+  category?:
+    | "LESSON"
+    | "QUIZ"
+    | "ASSESSMENT"
+    | "PROJECT"
+    | "LIVE_CLASS"
+    | "BREAK";
+  date?: Date;
+  cohortCourseId?: string;
+};
+
+interface PurchaseType {
+  course: any;
+  id: string;
+  userId: string;
+  courseId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Cohort {
+  id: string;
+  name: string;
+  startDate: string;
+  endDate?: string;
+}
+
+export type CourseType = {
+  id: string;
+  title: string;
+  description?: string;
+  price?: string;
+  discount?: string;
+  imageUrl?: string;
+  course_duration?: string;
+  course_instructor_name?: string;
+  course_instructor_image?: string;
+  course_instructor_title?: string;
+  course_instructor_description?: string;
+  course_instructor_ratings?: string;
+  course_instructor_courses?: string;
+  course_instructor_lessons?: string;
+  course_instructor_hrs?: string;
+  course_instructor_students_trained?: string;
+  hasFreeModules: boolean;
+
+  brochureUrl?: string;
+  course_preview_video?: string;
+  course_weeks: CourseWeekType[];
+  course_videos: string[]; // Ids of ProjectVideo
+  pricingPlans: CoursePricingPlanType[];
+  // purchases: string[]; // Ids of Purchase
+  timetable: TimeTable[];
+  syllabus?: string;
+  isPublished: boolean;
+  publishStatus: "DRAFT" | "PUBLISHED";
+  cohorts: { id: string }[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type TimeTable = {
+  id?: string;
+  name?: string;
+  category?:
+    | "LESSON"
+    | "QUIZ"
+    | "ASSESSMENT"
+    | "PROJECT"
+    | "LIVE_CLASS"
+    | "BREAK";
+  date?: Date;
+  courseId?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+};
+
+export type CoursePricingPlanType = {
+  id: string;
+  courseId: string;
+  planType: string;
+  amountPerInstallment: number;
+  installmentsCount: number;
+  discountPrice?: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CourseWeekType = {
+  id: string;
+  title: string;
+  iconUrl?: string;
+  courseId: string;
+  course: CourseType;
+  attachments: AttachmentType[];
+  courseModules: ModuleType[];
+  isPublished: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AttachmentType = {
+  id: string;
+  name: string;
+  url?: string;
+  courseWeekId: string;
+  courseWeek: CourseWeekType;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ModuleType = {
+  id: string;
+  title: string;
+  description?: string;
+  iconUrl?: string;
+  isFree?: boolean;
+  CourseWeek?: CourseWeekType | null;
+  courseWeekId?: string;
+  projectVideos?: ProjectVideoType[];
+  quizzes?: QuizType[];
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type QuizType = {
+  id: string;
+  question?: string;
+  answers?: QuizAnswerType[];
+  moduleId?: string;
+  courseModule?: ModuleType;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type QuizAnswerType = {
+  id?: string;
+  name?: string;
+  quizId?: string;
+  quiz?: QuizType;
+  isCorrect?: boolean;
+};
+
+export type ProjectVideoType = {
+  id: string;
+  title?: string;
+  videoUrl?: string;
+  thumbnailUrl?: string;
+  thumbnailKey?: string;
+  duration?: string;
+  videoType?: string; // VIMEO | YOUTUBE | UPLOAD | EXTERNAL
+  moduleId?: string;
+  courseModule?: ModuleType;
+  courseId?: string;
+  course?: CourseType;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type CohortCourse = {
+  id: string;
+  cohortId?: string;
+  cohort?: CohortType;
+  courseId?: string;
+  course?: CourseType;
+  title?: string;
+  description?: string | null;
+  price?: string | null;
+  imageUrl?: string | null;
+  course_duration?: string | null;
+  course_instructor_name?: string | null;
+  course_instructor_image?: string | null;
+  course_instructor_title?: string | null;
+  course_instructor_description?: string | null;
+  brochureUrl?: string | null;
+  course_preview_video?: string | null;
+  cohortTimeTable?: CohortCourseTimetable[];
+  cohortWeeks?: CohortCourseWeek[];
+  createdAt?: string;
+  updatedAt?: string;
+};
+
 export interface User {
   id: string;
   name: string;
@@ -6,6 +236,20 @@ export interface User {
   role: string;
   createdAt: string;
   paymentStatus?: PaymentStatus[];
+  videosCompleted: number;
+  totalVideos: number;
+
+  emailVerified: string;
+  image?: string | null;
+  password?: string | null;
+  access_token?: string | null;
+  ongoing_courses?: string[];
+  completed_courses?: string[];
+  course_purchased: PurchaseType[];
+  cohorts: UserCohortType[];
+  expectedVideoProgress: number;
+  inactive?: boolean;
+  updatedAt?: string;
 }
 
 export interface Course {

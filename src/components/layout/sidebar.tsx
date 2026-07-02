@@ -60,7 +60,7 @@ export default function Sidebar({
               </div>
               <div className="flex flex-col">
                 <h1 className="text-sm font-black text-slate-900 leading-none uppercase tracking-tighter">
-                  Sales
+                  Finance
                 </h1>
                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">
                   10alytics

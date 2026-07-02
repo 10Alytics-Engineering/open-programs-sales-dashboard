@@ -34,11 +34,12 @@ export default function AuthProvider({
         const user = JSON.parse(userStr);
 
         // Final role safety check
-        if (user.role !== "ADMIN" && user.role !== "SUPER_ADMIN") {
+        if (user.role !== "FINANCE_ADMIN" && user.role !== "SUPER_ADMIN") {
           localStorage.removeItem("nebiant_admin_token");
           localStorage.removeItem("nebiant_admin_user");
           router.push("/login");
           setAuthorized(false);
+
           return;
         }
 

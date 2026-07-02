@@ -26,7 +26,10 @@ export default function LoginPage() {
       const token = user?.access_token;
 
       // Role check: Only ADMIN or COURSE_ADMIN can access
-      if (!user || (user.role !== "ADMIN" && user.role !== "SUPER_ADMIN")) {
+      if (
+        !user ||
+        (user.role !== "FINANCE_ADMIN" && user.role !== "SUPER_ADMIN")
+      ) {
         setError(
           "Access Denied: You do not have the required permissions to access this dashboard.",
         );
