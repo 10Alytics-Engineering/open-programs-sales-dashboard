@@ -141,8 +141,6 @@ export default function DashboardPage() {
   // -------------------------------------------------------------------------
   const d = data as any;
 
-  console.log("Raw dashboard data:", data);
-
   const planStatus = d.planStatus ?? {
     totalPlans: data.summary.activityStats.total,
     paidInFull: data.summary.activityStats.success,
@@ -200,13 +198,13 @@ export default function DashboardPage() {
   const getTimelineTitle = () => {
     switch (duration) {
       case "30d":
-        return "Monthly Sales Activity";
+        return "Monthly Financial Activity";
       case "90d":
-        return "Quarterly Sales Activity";
+        return "Quarterly Financial Activity";
       case "all":
-        return "Lifetime Sales Activity";
+        return "Lifetime Financial Activity";
       default:
-        return "Weekly Sales Activity";
+        return "Weekly Financial Activity";
     }
   };
 

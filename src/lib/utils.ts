@@ -6,7 +6,8 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatPrice(price: number | string) {
-  const numericPrice = typeof price === 'string' ? parseFloat(price.replace(/,/g, '')) : price;
+  const numericPrice =
+    typeof price === "string" ? parseFloat(price.replace(/,/g, "")) : price;
   return new Intl.NumberFormat("en-NG", {
     style: "currency",
     currency: "NGN",
@@ -20,4 +21,10 @@ export function formatDate(date: string | Date) {
     month: "short",
     year: "numeric",
   });
+}
+
+export function textNormalization(text: string) {
+  // convert to regular text
+  if (!text) return "";
+  return text.replaceAll("_", " ");
 }

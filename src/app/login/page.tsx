@@ -26,7 +26,10 @@ export default function LoginPage() {
       const token = user?.access_token;
 
       // Role check: Only ADMIN or COURSE_ADMIN can access
-      if (!user || (user.role !== "ADMIN" && user.role !== "SUPER_ADMIN")) {
+      if (
+        !user ||
+        (user.role !== "FINANCE_ADMIN" && user.role !== "SUPER_ADMIN")
+      ) {
         setError(
           "Access Denied: You do not have the required permissions to access this dashboard.",
         );
@@ -77,7 +80,7 @@ export default function LoginPage() {
 
             <div className="text-center mb-10">
               <h1 className="text-2xl font-black text-slate-900 mb-1 uppercase tracking-tighter">
-                Sales Dashboard
+                Finance Dashboard
               </h1>
               <p className="text-slate-400 font-bold text-xs uppercase tracking-[0.2em] leading-none">
                 10alytics Business
