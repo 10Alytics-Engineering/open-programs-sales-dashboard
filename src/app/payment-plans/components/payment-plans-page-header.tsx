@@ -51,13 +51,13 @@ export function PaymentPlansPageHeader({
           {exporting ? "Exporting..." : "Export Excel"}
         </button>
 
-        <Link
+        {/* <Link
           href="/payment-plans/new"
           className="flex w-full items-center justify-center gap-2 rounded-2xl bg-indigo-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-200 transition hover:bg-indigo-700 active:scale-95 md:w-auto"
         >
           <Plus className="h-5 w-5" />
           Add Payment Plan
-        </Link>
+        </Link> */}
       </div>
     </div>
   );
