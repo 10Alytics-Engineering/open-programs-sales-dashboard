@@ -17,11 +17,18 @@ export default function PaymentPlansPage() {
     pagination,
     setPage,
     setLimit,
+    exportPlans,
+    exporting,
   } = usePaymentPlans();
 
   return (
     <div className="space-y-6">
-      <PaymentPlansPageHeader total={pagination.total} loading={loading} />
+      <PaymentPlansPageHeader
+        total={pagination.total}
+        loading={loading}
+        exporting={exporting}
+        onExport={exportPlans}
+      />
 
       <PaymentPlansSummaryCards summary={summary} />
 

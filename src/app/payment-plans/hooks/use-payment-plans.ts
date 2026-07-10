@@ -4,25 +4,22 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import api from "@/lib/axios";
-import { PaginationMeta, PaymentPlanRecord } from "@/types";
+import {
+  PaginationMeta,
+  PaymentPlanRecord,
+  PaymentPlansSummary,
+} from "@/types";
 
 export type PaymentPlansFiltersState = {
   query: string;
-  status: string;
+  collectionStatus: string;
   dateFrom: string;
   dateTo: string;
 };
 
-export type PaymentPlansSummary = {
-  expected: number;
-  collected: number;
-  outstanding: number;
-  overdue: number;
-};
-
 const initialFilters: PaymentPlansFiltersState = {
   query: "",
-  status: "all",
+  collectionStatus: "all",
   dateFrom: "",
   dateTo: "",
 };
@@ -36,15 +33,31 @@ const initialPagination: PaginationMeta = {
   hasPrevPage: false,
 };
 
+const initialSummary: PaymentPlansSummary = {
+  expected: 0,
+  collected: 0,
+  outstanding: 0,
+  overdue: 0,
+  pending: { count: 0, amount: 0 },
+  overdueGrace: { count: 0, amount: 0 },
+  defaulted: { count: 0, amount: 0 },
+  badDebt: { count: 0, amount: 0 },
+  completed: { count: 0, amount: 0 },
+  expired: { count: 0, amount: 0 },
+};
+
 export function usePaymentPlans() {
-  const [paymentPlans, setPaymentPlans] = useState<PaymentPlanRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [paymentPlans, setPaymentPlans] = useState<PaymentPlanRecord[]>([]);
+  const [summary, setSummary] = useState<PaymentPlansSummary>(initialSummary);
 
   const [filters, setFilters] =
     useState<PaymentPlansFiltersState>(initialFilters);
 
   const [pagination, setPagination] =
     useState<PaginationMeta>(initialPagination);
+
+  const [exporting, setExporting] = useState(false);
 
   const setFilter = <K extends keyof PaymentPlansFiltersState>(
     key: K,
@@ -86,7 +99,8 @@ export function usePaymentPlans() {
       params.set("limit", String(pagination.limit));
 
       if (filters.query) params.set("query", filters.query);
-      if (filters.status !== "all") params.set("status", filters.status);
+      if (filters.collectionStatus !== "all")
+        params.set("collectionStatus", filters.collectionStatus);
       if (filters.dateFrom) params.set("dateFrom", filters.dateFrom);
       if (filters.dateTo) params.set("dateTo", filters.dateTo);
 
@@ -96,6 +110,7 @@ export function usePaymentPlans() {
 
       setPaymentPlans(response.data.paymentPlans || []);
       setPagination(response.data.pagination || initialPagination);
+      setSummary(response.data.summary || initialSummary);
     } catch (error) {
       console.error(error);
       toast.error("Failed to load payment plans");
@@ -104,39 +119,95 @@ export function usePaymentPlans() {
     }
   };
 
+  const exportPlans = async () => {
+    try {
+      setExporting(true);
+
+      const params = new URLSearchParams();
+
+      if (filters.query) {
+        params.set("query", filters.query);
+      }
+
+      if (filters.collectionStatus && filters.collectionStatus !== "all") {
+        params.set("collectionStatus", filters.collectionStatus);
+      }
+
+      if (filters.dateFrom) {
+        params.set("dateFrom", filters.dateFrom);
+      }
+
+      if (filters.dateTo) {
+        params.set("dateTo", filters.dateTo);
+      }
+
+      /**
+       * Add these only if your hook still supports them.
+       */
+      if ("userId" in filters && filters.userId) {
+        params.set("userId", String(filters.userId));
+      }
+
+      if ("courseId" in filters && filters.courseId) {
+        params.set("courseId", String(filters.courseId));
+      }
+
+      const response = await api.get(
+        `/sales-dashboard/payment-plans/export?${params.toString()}`,
+        {
+          responseType: "blob",
+        },
+      );
+
+      const blob = new Blob([response.data], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+
+      const contentDisposition = response.headers["content-disposition"];
+
+      const filenameMatch = contentDisposition?.match(/filename="?([^"]+)"?/);
+
+      const filename =
+        filenameMatch?.[1] ||
+        `payment-plans-export-${new Date().toISOString().slice(0, 10)}.xlsx`;
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+
+      link.href = url;
+      link.download = filename;
+
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      window.URL.revokeObjectURL(url);
+
+      toast.success("Payment plans exported successfully");
+    } catch (error) {
+      console.error("Failed to export payment plans:", error);
+      toast.error("Failed to export payment plans");
+    } finally {
+      setExporting(false);
+    }
+  };
+
   useEffect(() => {
     const timer = setTimeout(fetchPlans, 300);
     return () => clearTimeout(timer);
   }, [
     filters.query,
-    filters.status,
+    filters.collectionStatus,
     filters.dateFrom,
     filters.dateTo,
     pagination.page,
     pagination.limit,
   ]);
 
-  const summary = useMemo<PaymentPlansSummary>(() => {
-    return paymentPlans.reduce(
-      (acc, plan) => {
-        acc.expected += plan.totals?.expectedAmount || 0;
-        acc.collected += plan.totals?.paidAmount || 0;
-        acc.outstanding += plan.totals?.pendingAmount || 0;
-        acc.overdue += plan.totals?.overdueAmount || 0;
-        return acc;
-      },
-      {
-        expected: 0,
-        collected: 0,
-        outstanding: 0,
-        overdue: 0,
-      },
-    );
-  }, [paymentPlans]);
-
   return {
     paymentPlans,
     loading,
+    exporting,
     filters,
     setFilter,
     summary,
@@ -144,5 +215,6 @@ export function usePaymentPlans() {
     setPage,
     setLimit,
     refetch: fetchPlans,
+    exportPlans,
   };
 }

@@ -6,6 +6,7 @@ import { PaymentPlanRecord } from "@/types";
 import { PaymentPlanStateBadge } from "./payment-plan-state-badge";
 import { PaymentPlanTableLoader } from "./payment-plan-table-loader";
 import { PaymentPlanEmptyState } from "./payment-plan-empty-state";
+import { PaymentPlanCollectionBadge } from "./payment-plan-collection-badge";
 
 type PaymentPlansTableProps = {
   paymentPlans: PaymentPlanRecord[];
@@ -102,15 +103,18 @@ function PaymentPlansTableRow({ plan }: { plan: PaymentPlanRecord }) {
           {plan.paymentPlan?.replace(/_/g, " ") || "N/A"}
         </p>
 
-        <p className="text-[10px] text-slate-400 font-bold">
+        {/* <p className="text-[10px] text-slate-400 font-bold">
           {plan.installmentSummary.total > 0
             ? `${plan.installmentSummary.paid}/${plan.installmentSummary.total} installments`
             : "One-time"}
-        </p>
+        </p> */}
       </td>
 
       <td className="px-6 py-5">
-        <PaymentPlanStateBadge state={plan.state} />
+        <PaymentPlanCollectionBadge
+          status={plan.collectionStatus}
+          days={plan.maxOverdueDays}
+        />
       </td>
 
       <td className="px-6 py-5 text-[11px] font-bold text-slate-500">
