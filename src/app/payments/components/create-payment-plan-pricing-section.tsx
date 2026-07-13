@@ -1,9 +1,7 @@
 import { ReactNode } from "react";
 
-import { formatPrice } from "@/lib/utils";
 import { CreatePaymentPlanSectionCard } from "./create-payment-plan-section-card";
 import { CreatePaymentPlanSelectField } from "./create-payment-plan-select-field";
-import { CreatePaymentPlanMiniMetric } from "./create-payment-plan-mini-metric";
 import { CourseOption, PricingPlanOption } from "../new/types";
 
 type CreatePaymentPlanPricingSectionProps = {
@@ -17,7 +15,6 @@ type CreatePaymentPlanPricingSectionProps = {
 export function CreatePaymentPlanPricingSection({
   icon,
   selectedCourse,
-  selectedPricingPlan,
   planType,
   onPlanChange,
 }: CreatePaymentPlanPricingSectionProps) {

@@ -1,40 +1,39 @@
 import { ReactNode } from "react";
-import { UserOption } from "../new/types";
 import { CreatePaymentPlanSectionCard } from "./create-payment-plan-section-card";
-import { CreatePaymentPlanSelectField } from "./create-payment-plan-select-field";
 
 type CreatePaymentPlanStudentSectionProps = {
   icon: ReactNode;
-  users: UserOption[];
-  userId: string;
+  email: string;
   disabled?: boolean;
-  onUserChange: (value: string) => void;
+  onEmailChange: (value: string) => void;
 };
 
 export function CreatePaymentPlanStudentSection({
   icon,
-  users,
-  userId,
-  onUserChange,
+  email,
   disabled,
+  onEmailChange,
 }: CreatePaymentPlanStudentSectionProps) {
   return (
     <CreatePaymentPlanSectionCard
       icon={icon}
       title="Student"
-      description="Choose the user this payment plan belongs to."
+      description="Enter the email address of the student this payment plan belongs to."
     >
-      <CreatePaymentPlanSelectField
-        label="User"
-        value={userId}
-        onChange={onUserChange}
-        placeholder="Select user"
-        disabled={disabled}
-        options={users.map((user) => ({
-          value: user.id,
-          label: `${user.name}${user.email ? ` — ${user.email}` : ""}`,
-        }))}
-      />
+      <label className="block space-y-2">
+        <span className="text-xs font-black uppercase tracking-widest text-slate-400">
+          Student Email
+        </span>
+
+        <input
+          type="email"
+          value={email}
+          disabled={disabled}
+          onChange={(event) => onEmailChange(event.target.value)}
+          placeholder="student@example.com"
+          className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-50 disabled:cursor-not-allowed disabled:opacity-60"
+        />
+      </label>
     </CreatePaymentPlanSectionCard>
   );
 }
