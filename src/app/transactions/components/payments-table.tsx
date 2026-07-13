@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 
-import { formatDate, formatPrice } from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
 import { Transaction } from "@/types";
 import { PaymentGatewayBadge } from "./payment-gateway-badge";
 import { PaymentTransactionStatusBadge } from "./payment-transaction-status-badge";
 import { PaymentsTableLoader } from "./payments-table-loader";
 import { PaymentsEmptyState } from "./payments-empty-state";
+import { formatTransactionAmount } from "@/lib/payment-helpers";
 
 type PaymentsTableProps = {
   payments: Transaction[];
@@ -112,7 +113,7 @@ function PaymentsTableRow({ payment }: { payment: Transaction }) {
 
       <td className="px-4 md:px-6 py-4 md:py-5">
         <span className="text-sm font-black text-slate-900 whitespace-nowrap">
-          {formatPrice(payment.amount)}
+          {formatTransactionAmount(payment)}
         </span>
       </td>
 

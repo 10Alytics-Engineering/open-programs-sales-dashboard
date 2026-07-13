@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 
 import api from "@/lib/axios";
@@ -18,10 +18,14 @@ const initialForm: CreatePaymentPlanFormState = {
   cohortId: "",
   planType: "",
   notes: "",
+  currency: "NGN",
 };
 
 export function useCreatePaymentPlan() {
   const router = useRouter();
+
+  const searchParams = useSearchParams();
+  const lockedUserId = searchParams.get("userId") || "";
 
   const [loadingOptions, setLoadingOptions] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -60,6 +64,7 @@ export function useCreatePaymentPlan() {
     Boolean(form.userId) &&
     Boolean(form.courseId) &&
     Boolean(form.planType) &&
+    Boolean(form.currency) &&
     !submitting;
 
   const setField = <K extends keyof CreatePaymentPlanFormState>(
@@ -85,6 +90,13 @@ export function useCreatePaymentPlan() {
 
         setUsers(response.data.users || []);
         setCourses(response.data.courses || []);
+
+        if (lockedUserId) {
+          setForm((current) => ({
+            ...current,
+            userId: lockedUserId,
+          }));
+        }
       } catch (error) {
         console.error(error);
         toast.error("Failed to load form options");
@@ -117,6 +129,7 @@ export function useCreatePaymentPlan() {
         const params = new URLSearchParams({
           courseId: form.courseId,
           planType: form.planType,
+          currency: form.currency,
         });
 
         if (form.cohortId) {
@@ -137,7 +150,7 @@ export function useCreatePaymentPlan() {
     };
 
     fetchPreview();
-  }, [form.courseId, form.cohortId, form.planType]);
+  }, [form.courseId, form.cohortId, form.planType, form.currency]);
 
   const handleSubmit = async () => {
     if (!canSubmit) {
@@ -153,11 +166,12 @@ export function useCreatePaymentPlan() {
         courseId: form.courseId,
         cohortId: form.cohortId || null,
         planType: form.planType,
+        currency: form.currency,
         notes: form.notes,
       });
 
       toast.success("Payment plan created successfully");
-      router.push(`/payment-plans/${response.data.id}`);
+      router.push(`/payments/${response.data.id}`);
     } catch (error: any) {
       console.error(error);
 
@@ -167,7 +181,7 @@ export function useCreatePaymentPlan() {
       toast.error(message);
 
       if (error?.response?.data?.paymentStatusId) {
-        router.push(`/payment-plans/${error.response.data.paymentStatusId}`);
+        router.push(`/payments/${error.response.data.paymentStatusId}`);
       }
     } finally {
       setSubmitting(false);
@@ -179,6 +193,7 @@ export function useCreatePaymentPlan() {
     courses,
     form,
     preview,
+    lockedUserId,
 
     loadingOptions,
     previewLoading,

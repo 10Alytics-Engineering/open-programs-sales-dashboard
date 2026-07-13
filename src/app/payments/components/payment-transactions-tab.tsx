@@ -78,6 +78,7 @@ export function PaymentTransactionsTab({
             reference: payload.transactionRef,
             notes: payload.notes,
             markPaid: payload.markPaid,
+            currency: payload.currency,
           });
 
           setAddModalOpen(false);

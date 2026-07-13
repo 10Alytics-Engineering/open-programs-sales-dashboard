@@ -19,7 +19,7 @@ export function PaymentPlansPageHeader({
       <div>
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="text-xl font-black leading-none text-slate-900 md:text-2xl">
-            Payment Plans
+            Payments
           </h1>
 
           {!loading && (
@@ -51,13 +51,13 @@ export function PaymentPlansPageHeader({
           {exporting ? "Exporting..." : "Export Excel"}
         </button>
 
-        {/* <Link
-          href="/payment-plans/new"
+        <Link
+          href="/payments/new"
           className="flex w-full items-center justify-center gap-2 rounded-2xl bg-indigo-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-200 transition hover:bg-indigo-700 active:scale-95 md:w-auto"
         >
           <Plus className="h-5 w-5" />
-          Add Payment Plan
-        </Link> */}
+          Add Payment
+        </Link>
       </div>
     </div>
   );

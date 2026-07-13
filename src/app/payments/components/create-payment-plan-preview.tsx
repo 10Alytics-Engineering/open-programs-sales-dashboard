@@ -5,6 +5,7 @@ import { CheckCircle2, Loader2 } from "lucide-react";
 import { formatDate, formatPrice } from "@/lib/utils";
 import { CreatePaymentPlanPreviewRow } from "./create-payment-plan-preview-row";
 import { CreatePaymentPlanWorkflow } from "../hooks/use-create-payment-plan";
+import { formatMoneyAmount } from "@/lib/payment-helpers";
 
 type CreatePaymentPlanPreviewProps = {
   workflow: CreatePaymentPlanWorkflow;
@@ -68,7 +69,9 @@ export function CreatePaymentPlanPreview({
             </div>
           ) : (
             <p className="text-2xl font-black mt-2">
-              {preview ? formatPrice(preview.expectedAmount) : "₦0"}
+              {preview
+                ? formatMoneyAmount(preview.expectedAmount, preview.currency)
+                : formatMoneyAmount(0, form.currency)}
             </p>
           )}
         </div>
@@ -143,7 +146,7 @@ function CreatePaymentPlanInstallmentPreview({
               </div>
 
               <p className="text-sm font-black">
-                {formatPrice(installment.amount)}
+                {formatMoneyAmount(installment.amount, preview.currency)}
               </p>
             </div>
           ))}

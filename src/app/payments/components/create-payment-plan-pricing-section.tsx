@@ -48,7 +48,7 @@ export function CreatePaymentPlanPricingSection({
           This course does not have pricing plans set up yet.
         </p>
       )}
-
+      {/* 
       {selectedPricingPlan && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <CreatePaymentPlanMiniMetric
@@ -61,7 +61,7 @@ export function CreatePaymentPlanPricingSection({
             value={formatPrice(selectedPricingPlan.amountPerInstallment)}
           />
         </div>
-      )}
+      )} */}
     </CreatePaymentPlanSectionCard>
   );
 }

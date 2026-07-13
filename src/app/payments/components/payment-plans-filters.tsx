@@ -3,7 +3,7 @@ import { PaymentPlansFiltersState } from "../hooks/use-payment-plans";
 
 const collectionStatusOptions = [
   { label: "All statuses", value: "all" },
-  { label: "Pending", value: "PENDING" },
+  { label: "Outstanding", value: "PENDING" },
   { label: "Overdue Grace", value: "OVERDUE_GRACE" },
   { label: "Defaulted", value: "DEFAULTED" },
   { label: "Bad Debt", value: "BAD_DEBT" },
