@@ -18,10 +18,9 @@ export function CreatePaymentPlanForm({
     <div className="space-y-6">
       <CreatePaymentPlanStudentSection
         icon={<User className="w-5 h-5" />}
-        users={workflow.users}
-        userId={workflow.form.userId}
-        onUserChange={(value) => workflow.setField("userId", value)}
-        disabled={Boolean(workflow.lockedUserId)}
+        email={workflow.form.userEmail}
+        disabled={Boolean(workflow.lockedEmail)}
+        onEmailChange={(value) => workflow.setField("userEmail", value)}
       />
 
       <CreatePaymentPlanCourseSection

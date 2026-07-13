@@ -2,7 +2,7 @@
 
 import { CheckCircle2, Loader2 } from "lucide-react";
 
-import { formatDate, formatPrice } from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
 import { CreatePaymentPlanPreviewRow } from "./create-payment-plan-preview-row";
 import { CreatePaymentPlanWorkflow } from "../hooks/use-create-payment-plan";
 import { formatMoneyAmount } from "@/lib/payment-helpers";
@@ -15,7 +15,6 @@ export function CreatePaymentPlanPreview({
   workflow,
 }: CreatePaymentPlanPreviewProps) {
   const {
-    selectedUser,
     selectedCourse,
     selectedCohort,
     form,
@@ -36,7 +35,7 @@ export function CreatePaymentPlanPreview({
         <div className="mt-5 space-y-4">
           <CreatePaymentPlanPreviewRow
             label="User"
-            value={selectedUser?.name || "Not selected"}
+            value={form.userEmail || "Not provided"}
           />
 
           <CreatePaymentPlanPreviewRow

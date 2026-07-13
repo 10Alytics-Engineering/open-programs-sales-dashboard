@@ -44,7 +44,7 @@ export type PaymentPlanPreviewData = {
 };
 
 export type CreatePaymentPlanFormState = {
-  userId: string;
+  userEmail: string;
   courseId: string;
   cohortId: string;
   planType: string;

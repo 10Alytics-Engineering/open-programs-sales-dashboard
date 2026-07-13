@@ -209,7 +209,7 @@ export function StudentProfileHeader({
                 )}
 
                 <Link
-                  href={`/payments/new?userId=${student.id}`}
+                  href={`/payments/new?email=${encodeURIComponent(student.email || "")}`}
                   className="inline-flex h-10 items-center justify-center gap-2 rounded-2xl bg-indigo-600 px-4 py-2 text-xs font-black uppercase tracking-widest text-white transition hover:bg-indigo-700"
                 >
                   <PlusCircle className="h-4 w-4" />

@@ -13,7 +13,7 @@ import {
 } from "../new/types";
 
 const initialForm: CreatePaymentPlanFormState = {
-  userId: "",
+  userEmail: "",
   courseId: "",
   cohortId: "",
   planType: "",
@@ -25,7 +25,7 @@ export function useCreatePaymentPlan() {
   const router = useRouter();
 
   const searchParams = useSearchParams();
-  const lockedUserId = searchParams.get("userId") || "";
+  const lockedEmail = searchParams.get("email") || "";
 
   const [loadingOptions, setLoadingOptions] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -36,10 +36,6 @@ export function useCreatePaymentPlan() {
 
   const [form, setForm] = useState<CreatePaymentPlanFormState>(initialForm);
   const [preview, setPreview] = useState<PaymentPlanPreviewData | null>(null);
-
-  const selectedUser = useMemo(() => {
-    return users.find((user) => user.id === form.userId) || null;
-  }, [users, form.userId]);
 
   const selectedCourse = useMemo(() => {
     return courses.find((course) => course.id === form.courseId) || null;
@@ -61,7 +57,7 @@ export function useCreatePaymentPlan() {
   }, [selectedCourse, form.planType]);
 
   const canSubmit =
-    Boolean(form.userId) &&
+    Boolean(form.userEmail) &&
     Boolean(form.courseId) &&
     Boolean(form.planType) &&
     Boolean(form.currency) &&
@@ -91,10 +87,10 @@ export function useCreatePaymentPlan() {
         setUsers(response.data.users || []);
         setCourses(response.data.courses || []);
 
-        if (lockedUserId) {
+        if (lockedEmail) {
           setForm((current) => ({
             ...current,
-            userId: lockedUserId,
+            userEmail: lockedEmail,
           }));
         }
       } catch (error) {
@@ -162,7 +158,7 @@ export function useCreatePaymentPlan() {
 
     try {
       const response = await api.post("/sales-dashboard/payment-plans", {
-        userId: form.userId,
+        userEmail: form.userEmail,
         courseId: form.courseId,
         cohortId: form.cohortId || null,
         planType: form.planType,
@@ -193,14 +189,13 @@ export function useCreatePaymentPlan() {
     courses,
     form,
     preview,
-    lockedUserId,
+    lockedEmail,
 
     loadingOptions,
     previewLoading,
     submitting,
     canSubmit,
 
-    selectedUser,
     selectedCourse,
     selectedCohort,
     selectedPricingPlan,
