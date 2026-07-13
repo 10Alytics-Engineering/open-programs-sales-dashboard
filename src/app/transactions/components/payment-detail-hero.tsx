@@ -1,28 +1,20 @@
 import { Hash } from "lucide-react";
 
-import { cn, formatDate, formatPrice } from "@/lib/utils";
+import { formatDate, formatPrice } from "@/lib/utils";
 import { Transaction } from "@/types";
 import { PaymentGatewayBadge } from "./payment-gateway-badge";
 import { PaymentTransactionStatusBadge } from "./payment-transaction-status-badge";
+import { CURRENCY_SYMBOLS } from "@/constants";
 
 const BASE_CURRENCY = "NGN";
-
-const currencySymbols: Record<string, string> = {
-  NGN: "₦",
-  GHS: "₵",
-  ZAR: "R",
-  KES: "KSh",
-  UGX: "USh",
-  RWF: "FRw",
-};
 
 function displayAmount(amount: any, currency = BASE_CURRENCY) {
   if (currency === BASE_CURRENCY) return formatPrice(amount);
 
   const num = typeof amount === "string" ? parseFloat(amount) : Number(amount);
-  if (Number.isNaN(num)) return `${currencySymbols[currency] || ""}—`;
+  if (Number.isNaN(num)) return `${CURRENCY_SYMBOLS[currency] || ""}—`;
 
-  const symbol = currencySymbols[currency] || `${currency} `;
+  const symbol = CURRENCY_SYMBOLS[currency] || `${currency} `;
 
   return `${symbol}${num.toLocaleString("en-US", {
     minimumFractionDigits: 2,
@@ -58,9 +50,17 @@ export function PaymentDetailHero({
     payment.paymentGateway ||
     (payment.source === "paystack" ? "PAYSTACK" : undefined);
 
-  const currency = metadata.selectedCurrency || BASE_CURRENCY;
-  const nativeAmount = metadata.currencyAmount || payment.amount;
-  const showConversion = currency !== BASE_CURRENCY;
+  const currency =
+    payment.displayCurrency ||
+    payment.currency ||
+    metadata.selectedCurrency ||
+    BASE_CURRENCY;
+
+  const nativeAmount = payment.displayAmount ?? payment.amount;
+
+  const showConversion =
+    currency !== BASE_CURRENCY &&
+    Number(payment.amount || 0) !== Number(nativeAmount || 0);
 
   const manualInfo = getManualPaymentInfo(metadata);
 
@@ -83,7 +83,8 @@ export function PaymentDetailHero({
 
             <div className="flex items-baseline gap-2 flex-wrap">
               <h1 className="text-2xl md:text-3xl font-black text-slate-900 leading-none">
-                {displayAmount(nativeAmount, currency)}
+                {payment.displayAmountFormatted ||
+                  displayAmount(nativeAmount, currency)}
               </h1>
 
               {currency !== BASE_CURRENCY && (

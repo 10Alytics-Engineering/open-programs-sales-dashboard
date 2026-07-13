@@ -2,17 +2,20 @@
 
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
-import { usePaymentDetail } from "../hooks/use-payment-detail";
-import { PaymentDetailHeader } from "../components/payment-detail-header";
-import { PaymentDetailHero } from "../components/payment-detail-hero";
-import { PaymentDetailInfoGrid } from "../components/payment-detail-info-grid";
-import { PaymentInstallmentContextCard } from "../components/payment-installment-context-card";
-import { PaymentTransactionMetadataCard } from "../components/payment-transaction-metadata-card";
-import { PaymentManualContextCard } from "../components/payment-manual-context-card";
+import { usePaymentPlanDetail } from "../hooks/use-payment-plan-detail";
+import { usePaymentPlanActions } from "../hooks/use-payment-plan-actions";
+import { PaymentPlanDetailHeader } from "../components/payment-plan-detail-header";
+import { PaymentPlanSummaryCard } from "../components/payment-plan-summary-card";
+import { PaymentPlanTabs } from "../components/payment-plan-tabs";
 
-export default function PaymentDetailPage() {
+export default function PaymentPlanDetailPage() {
   const router = useRouter();
-  const { payment, loading, metadata } = usePaymentDetail();
+  const { plan, loading, refetch } = usePaymentPlanDetail();
+
+  const actions = usePaymentPlanActions({
+    paymentStatusId: plan?.id || "",
+    onSuccess: refetch,
+  });
 
   if (loading) {
     return (
@@ -22,33 +25,23 @@ export default function PaymentDetailPage() {
     );
   }
 
-  if (!payment) {
+  if (!plan) {
     return (
       <div className="rounded-3xl bg-white border border-slate-100 p-8 text-center">
         <p className="text-sm font-bold text-slate-400">
-          Payment record not found.
+          Payment plan not found.
         </p>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 animate-in slide-in-from-bottom-4 duration-500">
-      <PaymentDetailHeader onBack={() => router.back()} />
+    <div className="space-y-6">
+      <PaymentPlanDetailHeader onBack={() => router.back()} />
 
-      <PaymentDetailHero payment={payment} metadata={metadata} />
+      <PaymentPlanSummaryCard plan={plan} />
 
-      <PaymentManualContextCard metadata={metadata} />
-
-      <PaymentDetailInfoGrid payment={payment} />
-
-      {payment.isInstallmentPayment && payment.matchedInstallment && (
-        <PaymentInstallmentContextCard
-          installment={payment.matchedInstallment}
-        />
-      )}
-
-      <PaymentTransactionMetadataCard payment={payment} metadata={metadata} />
+      <PaymentPlanTabs plan={plan} actions={actions} />
     </div>
   );
 }

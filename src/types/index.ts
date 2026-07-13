@@ -285,6 +285,9 @@ export interface PaymentInstallment {
   dueDate: string;
   paid: boolean;
   installmentNumber: number;
+  displayAmount?: number;
+  displayCurrency?: string;
+  displayAmountFormatted?: string;
 }
 
 export type Transaction = {
@@ -307,9 +310,17 @@ export type Transaction = {
 
   metadataParsed?: Record<string, any>;
   isInstallmentPayment?: boolean;
+  providerAmount?: number | null;
+  providerCurrency?: string | null;
+  currency?: string | null;
+  displayAmount?: number;
+  displayCurrency?: string;
+  displayAmountFormatted?: string;
   matchedInstallment?: {
     id: string;
     amount: number;
+    displayAmount?: number;
+    displayCurrency?: string;
     dueDate: string;
     paid: boolean;
     installmentNumber: number;
@@ -409,12 +420,21 @@ export type PaymentPlanRecord = {
   } | null;
 
   paymentPlan?: string | null;
+  displayCurrency?: string;
+  lockedCurrency?: string | null;
+  lockedPaymentGateway?: "PAYSTACK" | "STRIPE" | "START_BUTTON" | null;
+  hasSuccessfulTransaction?: boolean;
 
   totals: {
     expectedAmount: number;
     paidAmount: number;
     pendingAmount: number;
     overdueAmount: number;
+    displayCurrency?: string;
+    expectedAmountFormatted?: string;
+    paidAmountFormatted?: string;
+    pendingAmountFormatted?: string;
+    overdueAmountFormatted?: string;
   };
 
   installmentSummary: {

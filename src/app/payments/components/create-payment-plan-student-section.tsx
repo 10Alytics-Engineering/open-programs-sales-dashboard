@@ -7,6 +7,7 @@ type CreatePaymentPlanStudentSectionProps = {
   icon: ReactNode;
   users: UserOption[];
   userId: string;
+  disabled?: boolean;
   onUserChange: (value: string) => void;
 };
 
@@ -15,6 +16,7 @@ export function CreatePaymentPlanStudentSection({
   users,
   userId,
   onUserChange,
+  disabled,
 }: CreatePaymentPlanStudentSectionProps) {
   return (
     <CreatePaymentPlanSectionCard
@@ -27,6 +29,7 @@ export function CreatePaymentPlanStudentSection({
         value={userId}
         onChange={onUserChange}
         placeholder="Select user"
+        disabled={disabled}
         options={users.map((user) => ({
           value: user.id,
           label: `${user.name}${user.email ? ` — ${user.email}` : ""}`,

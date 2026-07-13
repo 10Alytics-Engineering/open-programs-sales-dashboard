@@ -14,7 +14,6 @@ import {
   CheckCircle2,
   Clock,
   AlertCircle,
-  AlertTriangle,
   Activity,
   ChevronRight,
   Calendar,
@@ -24,12 +23,15 @@ import {
   Banknote,
   ListChecks,
   FileText,
-  TrendingUp,
   XCircle,
 } from "lucide-react";
 import { DashboardData } from "@/types";
 import Link from "next/link";
 import { toast } from "sonner";
+import { TablePagination } from "@/components/shared/table-pagination";
+import { usePayments } from "./transactions/hooks/use-payments";
+import { PaymentsTableLoader } from "./transactions/components/payments-table-loader";
+import { PaymentsEmptyState } from "./transactions/components/payments-empty-state";
 
 // ---------------------------------------------------------------------------
 // Currency catalogue (provided). NGN is the reporting/base currency.
@@ -58,14 +60,6 @@ const formatCurrency = (amount: number, currency: string = BASE_CURRENCY) => {
   return `${symbol}${Number(amount).toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
 };
 
-// Compact NGN formatter for cards where space is tight.
-const formatCompactNGN = (amount: number) => {
-  if (!amount && amount !== 0) return "₦0";
-  if (amount >= 1_000_000) return `₦${(amount / 1_000_000).toFixed(1)}M`;
-  if (amount >= 1_000) return `₦${(amount / 1_000).toFixed(0)}K`;
-  return `₦${amount.toLocaleString()}`;
-};
-
 // Brand palette used for charts & breakdown bars (indigo-led, with accents).
 const COLORS = [
   "#6366f1",
@@ -81,6 +75,14 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [duration, setDuration] = useState("7d");
   const [loadingExport, setLoadingExport] = useState(false);
+
+  const {
+    payments,
+    loading: loadingTransactions,
+    pagination,
+    setPage,
+    setLimit,
+  } = usePayments();
 
   const handleExport = async () => {
     setLoadingExport(true);
@@ -111,10 +113,11 @@ export default function DashboardPage() {
     const fetchDashboard = async () => {
       setLoading(true);
       try {
-        const response = await api.get(
-          `/sales-dashboard/dashboard-all?duration=${duration}`,
-        );
-        setData(response.data);
+        const [dashboardResponse] = await Promise.all([
+          api.get(`/sales-dashboard/dashboard-all?duration=${duration}`),
+        ]);
+
+        setData(dashboardResponse.data);
       } catch (error) {
         console.error("Failed to fetch dashboard data", error);
       } finally {
@@ -169,19 +172,6 @@ export default function DashboardPage() {
     percent: number;
   }> = d.currencyBreakdown ?? [];
 
-  const scheduledInstallments = d.scheduledInstallments ?? {
-    weeks: [] as Array<{ label: string; amount: number }>,
-    totalDue: financials.scheduled,
-    onTimeRate: null,
-  };
-
-  const overdueAging = d.overdueAging ?? {
-    "1-7": { amount: 0, count: 0 },
-    "8-30": { amount: 0, count: 0 },
-    "31-60": { amount: 0, count: 0 },
-    "60+": { amount: 0, count: 0 },
-  };
-
   const topCourses: Array<any> = data.topCourses ?? [];
 
   // -------------------------------------------------------------------------
@@ -194,6 +184,22 @@ export default function DashboardPage() {
     pastDate.setDate(pastDate.getDate() - days);
     return `${formatDate(pastDate.toISOString())} - Today`;
   };
+
+  function formatTransactionCurrency(transaction: any) {
+    const currency =
+      transaction.displayCurrency ||
+      transaction.providerCurrency ||
+      transaction.currency ||
+      "NGN";
+
+    const amount =
+      transaction.displayAmount ??
+      transaction.providerAmount ??
+      transaction.amount ??
+      0;
+
+    return formatCurrency(Number(amount || 0), currency);
+  }
 
   const getTimelineTitle = () => {
     switch (duration) {
@@ -477,91 +483,126 @@ export default function DashboardPage() {
         </div>
       </div>
       {/* ============================================================== */}
-      {/* TOP PERFORMING COURSES with plan mix */}
+      {/* Recent Transactions */}
       {/* ============================================================== */}
       <div className="bg-white p-5 md:p-6 rounded-3xl border border-slate-100 shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 md:mb-6">
           <h3 className="text-base md:text-lg font-black text-slate-900">
-            Top Performing Courses
+            Recent Transactions
           </h3>
-          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-            Plan options · take-rate
-          </span>
         </div>
 
-        {topCourses.length === 0 ? (
+        {payments.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-10 text-slate-400">
-            <Activity className="w-8 h-8 mb-2 opacity-20" />
+            <Receipt className="w-8 h-8 mb-2 opacity-20" />
             <p className="text-[10px] md:text-xs font-bold italic uppercase tracking-tighter">
-              No course revenue yet
+              No transactions yet
             </p>
           </div>
         ) : (
-          <div className="space-y-5">
-            {topCourses.slice(0, 5).map((course: any) => {
-              const mix: Array<{ plan: string; percent: number }> =
-                course.planMix ?? [];
-              return (
-                <div key={course.id ?? course.title}>
-                  <div className="flex items-baseline justify-between mb-2 gap-2">
-                    <p className="text-sm md:text-base font-black text-slate-900 truncate">
-                      {course.title}
-                    </p>
-                    <p className="text-xs md:text-sm font-bold text-slate-500 shrink-0 tabular-nums">
-                      {formatPrice(course.revenue)}
-                      <span className="text-slate-300 font-medium">
-                        {" "}
-                        · {course.enrollments} enrollments
-                      </span>
-                    </p>
-                  </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left min-w-180">
+              <thead>
+                <tr className="border-b border-slate-100 bg-slate-50">
+                  <th className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                    Payer
+                  </th>
+                  <th className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                    Course
+                  </th>
+                  <th className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                    Gateway
+                  </th>
+                  <th className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                    Amount
+                  </th>
+                  <th className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                    Status
+                  </th>
+                  <th className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">
+                    Action
+                  </th>
+                </tr>
+              </thead>
 
-                  {/* Stacked plan-mix bar */}
-                  {mix.length > 0 ? (
-                    <>
-                      <div className="flex h-2 rounded-full overflow-hidden mb-1.5 bg-slate-100">
-                        {mix.map((m, i) => (
-                          <div
-                            key={m.plan}
-                            style={{
-                              width: `${m.percent}%`,
-                              backgroundColor: COLORS[i % COLORS.length],
-                            }}
-                          />
-                        ))}
-                      </div>
-                      <div className="flex flex-wrap gap-3 text-[10px] md:text-[11px] text-slate-500 font-bold">
-                        {mix.map((m, i) => (
-                          <span
-                            key={m.plan}
-                            className="inline-flex items-center gap-1.5"
-                          >
-                            <span
-                              className="w-1.5 h-1.5 rounded-full"
-                              style={{
-                                backgroundColor: COLORS[i % COLORS.length],
-                              }}
-                            />
-                            {m.plan.replace(/_/g, " ")} ·{" "}
-                            {Math.round(m.percent)}%
+              <tbody className="divide-y divide-slate-50">
+                {loadingTransactions ? (
+                  <PaymentsTableLoader />
+                ) : payments.length === 0 ? (
+                  <PaymentsEmptyState />
+                ) : (
+                  payments.map((transaction) => {
+                    const user = transaction.paymentStatus?.user;
+                    const course = transaction.paymentStatus?.course;
+                    const gateway =
+                      transaction.paymentGateway ||
+                      (transaction.source === "paystack" ? "PAYSTACK" : "—");
+
+                    return (
+                      <tr
+                        key={`${transaction.source}-${transaction.id}`}
+                        className="hover:bg-indigo-50/30"
+                      >
+                        <td className="px-4 py-4">
+                          <p className="text-sm font-black text-slate-900">
+                            {user?.name || "Unknown User"}
+                          </p>
+                          <p className="text-[10px] font-bold text-slate-400">
+                            {user?.email || "No email"}
+                          </p>
+                        </td>
+
+                        <td className="px-4 py-4">
+                          <p className="text-xs font-bold text-slate-700 truncate max-w-56">
+                            {course?.title || "No course attached"}
+                          </p>
+                          <p className="text-[10px] font-bold text-slate-400">
+                            {transaction.transactionRef || "No reference"}
+                          </p>
+                        </td>
+
+                        <td className="px-4 py-4">
+                          <span className="text-[10px] font-black uppercase text-slate-500">
+                            {gateway}
                           </span>
-                        ))}
-                      </div>
-                    </>
-                  ) : (
-                    // Fall back to a flat indigo bar when no plan mix is supplied.
-                    <div className="flex h-2 rounded-full overflow-hidden bg-slate-100">
-                      <div
-                        className="bg-indigo-500"
-                        style={{ width: "100%" }}
-                      />
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                        </td>
+
+                        <td className="px-4 py-4">
+                          <span className="text-sm font-black text-slate-900 whitespace-nowrap">
+                            {transaction.displayAmountFormatted ||
+                              formatTransactionCurrency(transaction)}
+                          </span>
+                        </td>
+
+                        <td className="px-4 py-4">
+                          <span className="text-[10px] font-black uppercase text-slate-500">
+                            {transaction.status}
+                          </span>
+                        </td>
+
+                        <td className="px-4 py-4 text-right">
+                          <Link
+                            href={`/payments/${transaction.id}?source=${transaction.source || "unified"}`}
+                            className="inline-flex items-center gap-1 text-[10px] font-black text-indigo-600 hover:text-indigo-800 uppercase"
+                          >
+                            Details
+                            <ChevronRight className="w-3 h-3" />
+                          </Link>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
           </div>
         )}
+
+        <TablePagination
+          pagination={pagination}
+          onPageChange={setPage}
+          onLimitChange={setLimit}
+        />
       </div>
     </div>
   );
@@ -657,7 +698,7 @@ function QuickActionCard({
   return (
     <Link
       href={href}
-      className="bg-white p-3 md:p-5 rounded-2xl md:rounded-[32px] border border-slate-100 shadow-sm flex items-center gap-2 md:gap-4 transition-all hover:border-indigo-200 hover:shadow-md active:scale-95 group min-w-0"
+      className="bg-white p-3 md:p-5 rounded-2xl md:rounded-4xl border border-slate-100 shadow-sm flex items-center gap-2 md:gap-4 transition-all hover:border-indigo-200 hover:shadow-md active:scale-95 group min-w-0"
     >
       <div
         className={cn(

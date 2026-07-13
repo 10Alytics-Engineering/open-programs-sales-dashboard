@@ -10,7 +10,7 @@ const statusMap: Record<
   }
 > = {
   PENDING: {
-    label: "Pending",
+    label: "Outstanding",
     description: "Not overdue",
     className: "bg-slate-100 text-slate-600",
   },
