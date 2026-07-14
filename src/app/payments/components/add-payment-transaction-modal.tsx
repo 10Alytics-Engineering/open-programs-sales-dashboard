@@ -64,8 +64,8 @@ export function AddPaymentTransactionModal({
 
   const isInstallmentPlan = Boolean(plan.paymentInstallments?.length);
 
-  const lockedCurrency = plan.lockedCurrency;
-  const lockedGateway = plan.lockedPaymentGateway;
+  const lockedCurrency = plan.lockedCurrency || plan.displayCurrency;
+  const lockedGateway = resolveGatewayLabel(lockedCurrency || "NGN");
   const hasPaymentLock = Boolean(lockedCurrency || lockedGateway);
 
   const [amount, setAmount] = useState("");
@@ -214,7 +214,7 @@ export function AddPaymentTransactionModal({
 
           {hasPaymentLock && (
             <p className="md:col-span-2 rounded-2xl border border-indigo-100 bg-indigo-50 p-4 text-xs font-bold text-indigo-700">
-              This plan already has a successful payment. New transactions must
+              This plan already has a selected currency. New transactions must
               use {lockedCurrency}. Gateway will remain{" "}
               {lockedGateway?.replace(/_/g, " ")}.
             </p>
