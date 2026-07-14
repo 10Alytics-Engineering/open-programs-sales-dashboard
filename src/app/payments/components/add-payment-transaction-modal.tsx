@@ -3,8 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { Loader2, X } from "lucide-react";
 
-import { formatPrice } from "@/lib/utils";
+import { formatMoneyAmount } from "@/lib/payment-helpers";
 import { PaymentPlanRecord } from "@/types";
+import { PAYMENT_CURRENCIES, resolveGatewayLabel } from "@/constants";
 
 type AddPaymentTransactionModalProps = {
   open: boolean;
@@ -13,13 +14,41 @@ type AddPaymentTransactionModalProps = {
   onClose: () => void;
   onSubmit: (payload: {
     amount: number;
-    paymentGateway: "PAYSTACK" | "STRIPE" | "START_BUTTON";
+    currency: string;
     transactionRef?: string;
     installmentNumber?: number;
     paymentDate?: string;
     notes?: string;
     markPaid: boolean;
   }) => void;
+};
+
+const getInstallmentDisplayAmount = (installment: any) => {
+  return Number(installment?.displayAmount ?? installment?.amount ?? 0);
+};
+
+const getInstallmentDisplayCurrency = (
+  installment: any,
+  plan: PaymentPlanRecord,
+) => {
+  return (
+    installment?.displayCurrency ||
+    plan.lockedCurrency ||
+    plan.totals?.displayCurrency ||
+    plan.displayCurrency ||
+    "NGN"
+  );
+};
+
+const formatInstallmentLabel = (installment: any, plan: PaymentPlanRecord) => {
+  if (installment?.displayAmountFormatted) {
+    return installment.displayAmountFormatted;
+  }
+
+  return formatMoneyAmount(
+    getInstallmentDisplayAmount(installment),
+    getInstallmentDisplayCurrency(installment, plan),
+  );
 };
 
 export function AddPaymentTransactionModal({
@@ -35,10 +64,12 @@ export function AddPaymentTransactionModal({
 
   const isInstallmentPlan = Boolean(plan.paymentInstallments?.length);
 
+  const lockedCurrency = plan.lockedCurrency || plan.displayCurrency;
+  const lockedGateway = resolveGatewayLabel(lockedCurrency || "NGN");
+  const hasPaymentLock = Boolean(lockedCurrency || lockedGateway);
+
   const [amount, setAmount] = useState("");
-  const [paymentGateway, setPaymentGateway] = useState<
-    "PAYSTACK" | "STRIPE" | "START_BUTTON"
-  >("START_BUTTON");
+  const [currency, setCurrency] = useState("NGN");
   const [transactionRef, setTransactionRef] = useState("");
   const [installmentNumber, setInstallmentNumber] = useState("");
   const [paymentDate, setPaymentDate] = useState("");
@@ -48,7 +79,12 @@ export function AddPaymentTransactionModal({
   useEffect(() => {
     if (!open) return;
 
-    setPaymentGateway("START_BUTTON");
+    setCurrency(
+      lockedCurrency ||
+        plan.totals?.displayCurrency ||
+        plan.displayCurrency ||
+        "NGN",
+    );
     setTransactionRef("");
     setPaymentDate(new Date().toISOString().slice(0, 10));
     setNotes("");
@@ -56,12 +92,12 @@ export function AddPaymentTransactionModal({
 
     if (firstUnpaidInstallment) {
       setInstallmentNumber(String(firstUnpaidInstallment.installmentNumber));
-      setAmount(String(firstUnpaidInstallment.amount));
+      setAmount(String(getInstallmentDisplayAmount(firstUnpaidInstallment)));
     } else {
       setInstallmentNumber("");
       setAmount(String(plan.totals?.pendingAmount || ""));
     }
-  }, [open, firstUnpaidInstallment, plan.totals?.pendingAmount]);
+  }, [open, firstUnpaidInstallment, plan.totals?.pendingAmount, lockedGateway]);
 
   const selectedInstallment = plan.paymentInstallments?.find(
     (installment) =>
@@ -70,7 +106,7 @@ export function AddPaymentTransactionModal({
 
   useEffect(() => {
     if (!selectedInstallment) return;
-    setAmount(String(selectedInstallment.amount));
+    setAmount(String(getInstallmentDisplayAmount(selectedInstallment)));
   }, [selectedInstallment]);
 
   if (!open) return null;
@@ -102,12 +138,14 @@ export function AddPaymentTransactionModal({
               <span className="text-xs font-black uppercase tracking-widest text-slate-400">
                 Installment
               </span>
+
               <select
                 value={installmentNumber}
                 onChange={(event) => setInstallmentNumber(event.target.value)}
                 className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold outline-none focus:border-indigo-300 focus:ring-4 focus:ring-indigo-50"
               >
                 <option value="">Select installment</option>
+
                 {plan.paymentInstallments?.map((installment) => (
                   <option
                     key={installment.id}
@@ -115,7 +153,7 @@ export function AddPaymentTransactionModal({
                     disabled={installment.paid}
                   >
                     #{installment.installmentNumber} —{" "}
-                    {formatPrice(installment.amount)}
+                    {formatInstallmentLabel(installment, plan)}
                     {installment.paid ? " — Paid" : ""}
                   </option>
                 ))}
@@ -127,6 +165,7 @@ export function AddPaymentTransactionModal({
             <span className="text-xs font-black uppercase tracking-widest text-slate-400">
               Amount
             </span>
+
             <input
               value={amount}
               onChange={(event) => setAmount(event.target.value)}
@@ -139,23 +178,32 @@ export function AddPaymentTransactionModal({
 
           <label className="block space-y-2">
             <span className="text-xs font-black uppercase tracking-widest text-slate-400">
-              Gateway / Source
+              Currency
             </span>
+
             <select
-              value={paymentGateway}
-              onChange={(event) => setPaymentGateway(event.target.value as any)}
-              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold outline-none focus:border-indigo-300 focus:ring-4 focus:ring-indigo-50"
+              value={currency}
+              disabled={hasPaymentLock}
+              onChange={(event) => setCurrency(event.target.value)}
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold outline-none focus:border-indigo-300 focus:ring-4 focus:ring-indigo-50 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              <option value="START_BUTTON">Start Button</option>
-              <option value="PAYSTACK">Paystack</option>
-              <option value="STRIPE">Stripe</option>
+              {PAYMENT_CURRENCIES.map((item) => (
+                <option key={item} value={item}>
+                  {item}
+                </option>
+              ))}
             </select>
+
+            <p className="text-[11px] font-bold text-slate-400">
+              Gateway: {resolveGatewayLabel(currency)}
+            </p>
           </label>
 
           <label className="block space-y-2">
             <span className="text-xs font-black uppercase tracking-widest text-slate-400">
               Reference
             </span>
+
             <input
               value={transactionRef}
               onChange={(event) => setTransactionRef(event.target.value)}
@@ -164,10 +212,19 @@ export function AddPaymentTransactionModal({
             />
           </label>
 
+          {hasPaymentLock && (
+            <p className="md:col-span-2 rounded-2xl border border-indigo-100 bg-indigo-50 p-4 text-xs font-bold text-indigo-700">
+              This plan already has a selected currency. New transactions must
+              use {lockedCurrency}. Gateway will remain{" "}
+              {lockedGateway?.replace(/_/g, " ")}.
+            </p>
+          )}
+
           <label className="block space-y-2">
             <span className="text-xs font-black uppercase tracking-widest text-slate-400">
               Payment Date
             </span>
+
             <input
               value={paymentDate}
               onChange={(event) => setPaymentDate(event.target.value)}
@@ -180,6 +237,7 @@ export function AddPaymentTransactionModal({
             <span className="text-xs font-black uppercase tracking-widest text-slate-400">
               Notes
             </span>
+
             <textarea
               value={notes}
               onChange={(event) => setNotes(event.target.value)}
@@ -196,6 +254,7 @@ export function AddPaymentTransactionModal({
               onChange={(event) => setMarkPaid(event.target.checked)}
               className="mt-1"
             />
+
             <span>
               <span className="block text-sm font-black text-slate-900">
                 Mark as paid immediately
@@ -221,7 +280,7 @@ export function AddPaymentTransactionModal({
             onClick={() =>
               onSubmit({
                 amount: Number(amount),
-                paymentGateway,
+                currency,
                 transactionRef: transactionRef || undefined,
                 installmentNumber: installmentNumber
                   ? Number(installmentNumber)

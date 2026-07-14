@@ -1,6 +1,7 @@
 import { CheckCircle2, Clock } from "lucide-react";
 
-import { cn, formatDate, formatPrice } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
+import { CURRENCY_SYMBOLS } from "@/constants";
 
 type PaymentInstallmentContextCardProps = {
   installment: {
@@ -8,8 +9,19 @@ type PaymentInstallmentContextCardProps = {
     dueDate: string;
     paid: boolean;
     installmentNumber: number;
+    displayAmount?: number;
+    displayCurrency?: string;
   };
 };
+
+function formatAmount(amount: number, currency: string) {
+  const symbol = CURRENCY_SYMBOLS[currency] || `${currency} `;
+
+  return `${symbol}${Number(amount || 0).toLocaleString("en-US", {
+    minimumFractionDigits: ["USD", "GBP", "GHS"].includes(currency) ? 2 : 0,
+    maximumFractionDigits: 2,
+  })}`;
+}
 
 export function PaymentInstallmentContextCard({
   installment,
@@ -33,7 +45,10 @@ export function PaymentInstallmentContextCard({
 
       <div className="text-left md:text-right">
         <p className="text-xl font-black text-slate-900">
-          {formatPrice(installment.amount)}
+          {formatAmount(
+            installment.displayAmount ?? installment.amount,
+            installment.displayCurrency || "NGN",
+          )}
         </p>
 
         <span

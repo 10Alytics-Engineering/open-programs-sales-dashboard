@@ -31,6 +31,51 @@ export function StudentCard({ student }: StudentCardProps) {
     );
   };
 
+  const getPaymentStatusForCourse = (courseId?: string) => {
+    if (!courseId) return null;
+
+    return (
+      student.paymentStatus?.find(
+        (status: any) => status.courseId === courseId,
+      ) || null
+    );
+  };
+
+  const getPaymentLabel = (paymentStatus: any) => {
+    if (!paymentStatus) return "No Payment Plan";
+
+    if (paymentStatus.collectionStatus === "COMPLETED") {
+      return "Paid";
+    }
+
+    if (paymentStatus.collectionStatus === "PENDING") {
+      return "Outstanding";
+    }
+
+    return String(paymentStatus.collectionStatus || "Outstanding").replace(
+      /_/g,
+      " ",
+    );
+  };
+
+  const getPaymentTone = (paymentStatus: any) => {
+    if (!paymentStatus) return "bg-slate-100 text-slate-600";
+
+    if (paymentStatus.collectionStatus === "COMPLETED") {
+      return "bg-emerald-100 text-emerald-700";
+    }
+
+    if (
+      paymentStatus.collectionStatus === "OVERDUE_GRACE" ||
+      paymentStatus.collectionStatus === "DEFAULTED" ||
+      paymentStatus.collectionStatus === "BAD_DEBT"
+    ) {
+      return "bg-rose-100 text-rose-700";
+    }
+
+    return "bg-amber-100 text-amber-700";
+  };
+
   return (
     <div className="p-5 md:p-6 hover:bg-indigo-50/30 transition">
       <div className="flex flex-col gap-5">
@@ -108,6 +153,7 @@ export function StudentCard({ student }: StudentCardProps) {
               {purchasedCourses.map((purchase) => {
                 const course = purchase.course;
                 const activeCohort = getActiveCohortForCourse(course?.id);
+                const paymentStatus = getPaymentStatusForCourse(course?.id);
 
                 return (
                   <div
@@ -127,20 +173,14 @@ export function StudentCard({ student }: StudentCardProps) {
                       </div>
                     </div>
 
-                    {activeCohort?.isPaymentActive !== undefined && (
-                      <span
-                        className={cn(
-                          "inline-flex w-fit rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-widest",
-                          activeCohort.isPaymentActive
-                            ? "bg-emerald-100 text-emerald-700"
-                            : "bg-amber-100 text-amber-700",
-                        )}
-                      >
-                        {activeCohort.isPaymentActive
-                          ? "Payment Active"
-                          : "Payment Pending"}
-                      </span>
-                    )}
+                    <span
+                      className={cn(
+                        "inline-flex w-fit rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-widest",
+                        getPaymentTone(paymentStatus),
+                      )}
+                    >
+                      {getPaymentLabel(paymentStatus)}
+                    </span>
                   </div>
                 );
               })}

@@ -1,9 +1,7 @@
 import { ReactNode } from "react";
 
-import { formatPrice } from "@/lib/utils";
 import { CreatePaymentPlanSectionCard } from "./create-payment-plan-section-card";
 import { CreatePaymentPlanSelectField } from "./create-payment-plan-select-field";
-import { CreatePaymentPlanMiniMetric } from "./create-payment-plan-mini-metric";
 import { CourseOption, PricingPlanOption } from "../new/types";
 
 type CreatePaymentPlanPricingSectionProps = {
@@ -17,7 +15,6 @@ type CreatePaymentPlanPricingSectionProps = {
 export function CreatePaymentPlanPricingSection({
   icon,
   selectedCourse,
-  selectedPricingPlan,
   planType,
   onPlanChange,
 }: CreatePaymentPlanPricingSectionProps) {
@@ -48,7 +45,7 @@ export function CreatePaymentPlanPricingSection({
           This course does not have pricing plans set up yet.
         </p>
       )}
-
+      {/* 
       {selectedPricingPlan && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <CreatePaymentPlanMiniMetric
@@ -61,7 +58,7 @@ export function CreatePaymentPlanPricingSection({
             value={formatPrice(selectedPricingPlan.amountPerInstallment)}
           />
         </div>
-      )}
+      )} */}
     </CreatePaymentPlanSectionCard>
   );
 }

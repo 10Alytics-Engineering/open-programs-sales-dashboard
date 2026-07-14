@@ -31,6 +31,9 @@ export type CourseOption = {
 };
 
 export type PaymentPlanPreviewData = {
+  currency: string;
+  paymentGateway: "PAYSTACK" | "STRIPE" | "START_BUTTON";
+  amountPerInstallment: number;
   expectedAmount: number;
   pricingPlan: PricingPlanOption;
   installments: Array<{
@@ -41,9 +44,10 @@ export type PaymentPlanPreviewData = {
 };
 
 export type CreatePaymentPlanFormState = {
-  userId: string;
+  userEmail: string;
   courseId: string;
   cohortId: string;
   planType: string;
+  currency: string;
   notes: string;
 };

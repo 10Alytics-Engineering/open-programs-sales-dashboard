@@ -8,12 +8,12 @@ export type UpdateInstallmentDueDatePayload = {
 
 export type AddPaymentTransactionPayload = {
   amount: number;
-  paymentGateway?: "PAYSTACK" | "STRIPE" | "START_BUTTON";
   transactionRef?: string;
   installmentNumber?: number;
   paymentDate?: string;
   notes?: string;
   createdBy?: string;
+  currency?: string;
 };
 
 export type MarkPaymentTransactionPaidPayload = {
@@ -24,6 +24,7 @@ export type MarkPaymentTransactionPaidPayload = {
 
 export type AddManualPaymentPayload = {
   amount: number;
+  currency?: string;
   installmentNumber?: number;
   paymentDate?: string;
   reference?: string;

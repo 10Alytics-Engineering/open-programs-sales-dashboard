@@ -18,8 +18,8 @@ import { cn } from "@/lib/utils";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/" },
+  // { icon: CreditCard, label: "Payments", href: "/payments" },
   { icon: CreditCard, label: "Payments", href: "/payments" },
-  { icon: CalendarClock, label: "Payment Plans", href: "/payment-plans" },
   { icon: Users, label: "Students", href: "/students" },
   { icon: PieChart, label: "Reports", href: "/reports" },
 ];

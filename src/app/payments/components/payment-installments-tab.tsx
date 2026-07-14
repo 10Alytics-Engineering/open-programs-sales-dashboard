@@ -7,6 +7,7 @@ import { cn, formatDate, formatPrice } from "@/lib/utils";
 import { PaymentInstallment } from "@/types";
 import { usePaymentPlanActions } from "../hooks/use-payment-plan-actions";
 import { EditInstallmentDueDateModal } from "./edit-installment-due-date-modal";
+import { formatMoneyAmount } from "@/lib/payment-helpers";
 
 type PaymentInstallmentsTabProps = {
   installments: PaymentInstallment[];
@@ -108,7 +109,11 @@ function PaymentInstallmentCard({
 
       <div className="flex flex-wrap items-center justify-between md:justify-end gap-3">
         <p className="text-lg font-black text-slate-900">
-          {formatPrice(installment.amount)}
+          {installment?.displayAmountFormatted ||
+            formatMoneyAmount(
+              installment.displayAmount ?? installment.amount,
+              installment.displayCurrency,
+            )}
         </p>
 
         <span

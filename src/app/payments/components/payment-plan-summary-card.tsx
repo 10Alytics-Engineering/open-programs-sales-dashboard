@@ -4,6 +4,8 @@ import { formatPrice } from "@/lib/utils";
 import { PaymentPlanRecord } from "@/types";
 import { PaymentPlanMetric } from "./payment-plan-metric";
 import { PaymentPlanStateBadge } from "./payment-plan-state-badge";
+import { PaymentPlanCollectionBadge } from "./payment-plan-collection-badge";
+import { formatPaymentPlanAmount } from "@/lib/payment-helpers";
 
 type PaymentPlanSummaryCardProps = {
   plan: PaymentPlanRecord;
@@ -14,7 +16,10 @@ export function PaymentPlanSummaryCard({ plan }: PaymentPlanSummaryCardProps) {
     <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 md:p-8">
       <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
         <div className="space-y-4">
-          <PaymentPlanStateBadge state={plan.state} />
+          <PaymentPlanCollectionBadge
+            status={plan.collectionStatus}
+            days={plan.maxOverdueDays}
+          />
 
           <div>
             <h1 className="text-2xl md:text-3xl font-black text-slate-900">
@@ -47,22 +52,22 @@ export function PaymentPlanSummaryCard({ plan }: PaymentPlanSummaryCardProps) {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 w-full lg:w-auto">
           <PaymentPlanMetric
             label="Expected"
-            value={formatPrice(plan.totals.expectedAmount)}
+            value={formatPaymentPlanAmount(plan, "expectedAmount")}
           />
 
           <PaymentPlanMetric
             label="Collected"
-            value={formatPrice(plan.totals.paidAmount)}
+            value={formatPaymentPlanAmount(plan, "paidAmount")}
           />
 
           <PaymentPlanMetric
             label="Outstanding"
-            value={formatPrice(plan.totals.pendingAmount)}
+            value={formatPaymentPlanAmount(plan, "pendingAmount")}
           />
 
           <PaymentPlanMetric
             label="Overdue"
-            value={formatPrice(plan.totals.overdueAmount)}
+            value={formatPaymentPlanAmount(plan, "overdueAmount")}
           />
         </div>
       </div>

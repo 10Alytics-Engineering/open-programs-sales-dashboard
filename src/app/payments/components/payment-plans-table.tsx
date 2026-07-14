@@ -3,9 +3,10 @@ import { ChevronRight } from "lucide-react";
 
 import { formatDate } from "@/lib/utils";
 import { PaymentPlanRecord } from "@/types";
-import { PaymentPlanStateBadge } from "./payment-plan-state-badge";
 import { PaymentPlanTableLoader } from "./payment-plan-table-loader";
 import { PaymentPlanEmptyState } from "./payment-plan-empty-state";
+import { PaymentPlanCollectionBadge } from "./payment-plan-collection-badge";
+import { formatPaymentPlanAmount } from "@/lib/payment-helpers";
 
 type PaymentPlansTableProps = {
   paymentPlans: PaymentPlanRecord[];
@@ -26,6 +27,7 @@ export function PaymentPlansTable({
             <PaymentPlansTableHead>User</PaymentPlansTableHead>
             <PaymentPlansTableHead>Course</PaymentPlansTableHead>
             <PaymentPlansTableHead>Plan</PaymentPlansTableHead>
+            <PaymentPlansTableHead>Expected</PaymentPlansTableHead>
             <PaymentPlansTableHead>Status</PaymentPlansTableHead>
             <PaymentPlansTableHead>Date</PaymentPlansTableHead>
             <PaymentPlansTableHead align="right">Action</PaymentPlansTableHead>
@@ -102,15 +104,27 @@ function PaymentPlansTableRow({ plan }: { plan: PaymentPlanRecord }) {
           {plan.paymentPlan?.replace(/_/g, " ") || "N/A"}
         </p>
 
-        <p className="text-[10px] text-slate-400 font-bold">
+        {/* <p className="text-[10px] text-slate-400 font-bold">
           {plan.installmentSummary.total > 0
             ? `${plan.installmentSummary.paid}/${plan.installmentSummary.total} installments`
             : "One-time"}
+        </p> */}
+      </td>
+
+      <td className="px-6 py-5">
+        <p className="text-sm font-black text-slate-900">
+          {formatPaymentPlanAmount(plan, "expectedAmount")}
+        </p>
+        <p className="text-[10px] text-slate-400 font-bold">
+          {plan?.displayCurrency || "NGN"}
         </p>
       </td>
 
       <td className="px-6 py-5">
-        <PaymentPlanStateBadge state={plan.state} />
+        <PaymentPlanCollectionBadge
+          status={plan.collectionStatus}
+          days={plan.maxOverdueDays}
+        />
       </td>
 
       <td className="px-6 py-5 text-[11px] font-bold text-slate-500">
@@ -119,7 +133,7 @@ function PaymentPlansTableRow({ plan }: { plan: PaymentPlanRecord }) {
 
       <td className="px-6 py-5 text-right">
         <Link
-          href={`/payment-plans/${plan.id}`}
+          href={`/payments/${plan.id}`}
           className="inline-flex items-center justify-end gap-1 text-xs font-bold text-indigo-600 hover:text-indigo-800 transition"
         >
           Details

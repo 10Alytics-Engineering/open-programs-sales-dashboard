@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 
 import api from "@/lib/axios";
@@ -13,15 +13,19 @@ import {
 } from "../new/types";
 
 const initialForm: CreatePaymentPlanFormState = {
-  userId: "",
+  userEmail: "",
   courseId: "",
   cohortId: "",
   planType: "",
   notes: "",
+  currency: "NGN",
 };
 
 export function useCreatePaymentPlan() {
   const router = useRouter();
+
+  const searchParams = useSearchParams();
+  const lockedEmail = searchParams.get("email") || "";
 
   const [loadingOptions, setLoadingOptions] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -32,10 +36,6 @@ export function useCreatePaymentPlan() {
 
   const [form, setForm] = useState<CreatePaymentPlanFormState>(initialForm);
   const [preview, setPreview] = useState<PaymentPlanPreviewData | null>(null);
-
-  const selectedUser = useMemo(() => {
-    return users.find((user) => user.id === form.userId) || null;
-  }, [users, form.userId]);
 
   const selectedCourse = useMemo(() => {
     return courses.find((course) => course.id === form.courseId) || null;
@@ -57,9 +57,10 @@ export function useCreatePaymentPlan() {
   }, [selectedCourse, form.planType]);
 
   const canSubmit =
-    Boolean(form.userId) &&
+    Boolean(form.userEmail) &&
     Boolean(form.courseId) &&
     Boolean(form.planType) &&
+    Boolean(form.currency) &&
     !submitting;
 
   const setField = <K extends keyof CreatePaymentPlanFormState>(
@@ -85,6 +86,13 @@ export function useCreatePaymentPlan() {
 
         setUsers(response.data.users || []);
         setCourses(response.data.courses || []);
+
+        if (lockedEmail) {
+          setForm((current) => ({
+            ...current,
+            userEmail: lockedEmail,
+          }));
+        }
       } catch (error) {
         console.error(error);
         toast.error("Failed to load form options");
@@ -117,6 +125,7 @@ export function useCreatePaymentPlan() {
         const params = new URLSearchParams({
           courseId: form.courseId,
           planType: form.planType,
+          currency: form.currency,
         });
 
         if (form.cohortId) {
@@ -137,7 +146,7 @@ export function useCreatePaymentPlan() {
     };
 
     fetchPreview();
-  }, [form.courseId, form.cohortId, form.planType]);
+  }, [form.courseId, form.cohortId, form.planType, form.currency]);
 
   const handleSubmit = async () => {
     if (!canSubmit) {
@@ -149,15 +158,16 @@ export function useCreatePaymentPlan() {
 
     try {
       const response = await api.post("/sales-dashboard/payment-plans", {
-        userId: form.userId,
+        userEmail: form.userEmail,
         courseId: form.courseId,
         cohortId: form.cohortId || null,
         planType: form.planType,
+        currency: form.currency,
         notes: form.notes,
       });
 
       toast.success("Payment plan created successfully");
-      router.push(`/payment-plans/${response.data.id}`);
+      router.push(`/payments/${response.data.id}`);
     } catch (error: any) {
       console.error(error);
 
@@ -167,7 +177,7 @@ export function useCreatePaymentPlan() {
       toast.error(message);
 
       if (error?.response?.data?.paymentStatusId) {
-        router.push(`/payment-plans/${error.response.data.paymentStatusId}`);
+        router.push(`/payments/${error.response.data.paymentStatusId}`);
       }
     } finally {
       setSubmitting(false);
@@ -179,13 +189,13 @@ export function useCreatePaymentPlan() {
     courses,
     form,
     preview,
+    lockedEmail,
 
     loadingOptions,
     previewLoading,
     submitting,
     canSubmit,
 
-    selectedUser,
     selectedCourse,
     selectedCohort,
     selectedPricingPlan,

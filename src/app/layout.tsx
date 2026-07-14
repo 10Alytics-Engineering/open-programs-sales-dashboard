@@ -9,8 +9,8 @@ import { cn } from "@/lib/utils";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "10alytics Business Sales Dashboard",
-  description: "Internal sales tracking for 10alytics Business",
+  title: "10alytics Business Finance Dashboard",
+  description: "Internal finance application for 10alytics Business",
 };
 
 export default function RootLayout({
@@ -23,16 +23,17 @@ export default function RootLayout({
       <head>
         <link rel="icon" href="/logo.png" />
       </head>
-      <body className={cn(inter.className, "bg-slate-50 text-slate-900 antialiased")}>
+      <body
+        className={cn(
+          inter.className,
+          "bg-slate-50 text-slate-900 antialiased",
+        )}
+      >
         <AuthProvider>
-          <LayoutProvider>
-            {children}
-          </LayoutProvider>
+          <LayoutProvider>{children}</LayoutProvider>
         </AuthProvider>
         <Toaster position="top-right" richColors />
       </body>
     </html>
   );
 }
-
-

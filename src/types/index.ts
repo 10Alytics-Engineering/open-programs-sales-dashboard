@@ -285,6 +285,9 @@ export interface PaymentInstallment {
   dueDate: string;
   paid: boolean;
   installmentNumber: number;
+  displayAmount?: number;
+  displayCurrency?: string;
+  displayAmountFormatted?: string;
 }
 
 export type Transaction = {
@@ -307,9 +310,17 @@ export type Transaction = {
 
   metadataParsed?: Record<string, any>;
   isInstallmentPayment?: boolean;
+  providerAmount?: number | null;
+  providerCurrency?: string | null;
+  currency?: string | null;
+  displayAmount?: number;
+  displayCurrency?: string;
+  displayAmountFormatted?: string;
   matchedInstallment?: {
     id: string;
     amount: number;
+    displayAmount?: number;
+    displayCurrency?: string;
     dueDate: string;
     paid: boolean;
     installmentNumber: number;
@@ -384,22 +395,59 @@ export interface PaymentPlanTotals {
   installmentExpected: number;
 }
 
-export interface PaymentPlanRecord extends PaymentStatus {
-  state: "paid_in_full" | "overdue" | "in_progress" | "pending" | "expired";
-  expectedAmount?: number;
-  currency?: string;
-  notes?: string;
-  manuallyCreated?: boolean;
-  totals: PaymentPlanTotals;
+export type PaymentPlanRecord = {
+  id: string;
+  status: string;
+  collectionStatus: PaymentCollectionStatus;
+  maxOverdueDays: number;
+  collectionCheckedAt?: string | null;
+
+  user?: {
+    id: string;
+    name?: string | null;
+    email?: string | null;
+    phone_number?: string | null;
+  };
+
+  course?: {
+    id: string;
+    title?: string | null;
+  };
+
+  cohort?: {
+    id: string;
+    name?: string | null;
+  } | null;
+
+  paymentPlan?: string | null;
+  displayCurrency?: string;
+  lockedCurrency?: string | null;
+  lockedPaymentGateway?: "PAYSTACK" | "STRIPE" | "START_BUTTON" | null;
+  hasSuccessfulTransaction?: boolean;
+
+  totals: {
+    expectedAmount: number;
+    paidAmount: number;
+    pendingAmount: number;
+    overdueAmount: number;
+    displayCurrency?: string;
+    expectedAmountFormatted?: string;
+    paidAmountFormatted?: string;
+    pendingAmountFormatted?: string;
+    overdueAmountFormatted?: string;
+  };
+
   installmentSummary: {
     total: number;
     paid: number;
     unpaid: number;
     overdue: number;
   };
-  transactions: Transaction[];
-  paystackTransactions?: Transaction[];
-}
+
+  paymentInstallments?: any[];
+  transactions?: any[];
+  createdAt: string;
+};
 
 export type PaginationMeta = {
   page: number;
@@ -408,4 +456,43 @@ export type PaginationMeta = {
   totalPages: number;
   hasNextPage: boolean;
   hasPrevPage: boolean;
+};
+
+export type PaymentCollectionStatus =
+  | "PENDING"
+  | "OVERDUE_GRACE"
+  | "DEFAULTED"
+  | "BAD_DEBT"
+  | "COMPLETED"
+  | "EXPIRED";
+
+export type PaymentPlansSummary = {
+  expected: number;
+  collected: number;
+  outstanding: number;
+  overdue: number;
+  pending: {
+    count: number;
+    amount: number;
+  };
+  overdueGrace: {
+    count: number;
+    amount: number;
+  };
+  defaulted: {
+    count: number;
+    amount: number;
+  };
+  badDebt: {
+    count: number;
+    amount: number;
+  };
+  completed: {
+    count: number;
+    amount: number;
+  };
+  expired: {
+    count: number;
+    amount: number;
+  };
 };

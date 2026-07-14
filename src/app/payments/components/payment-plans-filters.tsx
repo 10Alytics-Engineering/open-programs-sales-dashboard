@@ -1,11 +1,13 @@
 import { Filter, Search } from "lucide-react";
 import { PaymentPlansFiltersState } from "../hooks/use-payment-plans";
 
-const statusOptions = [
-  { label: "All Statuses", value: "all" },
-  { label: "Complete", value: "COMPLETE" },
-  { label: "Balance Payment", value: "BALANCE_HALF_PAYMENT" },
-  { label: "Pending Seat", value: "PENDING_SEAT_CONFIRMATION" },
+const collectionStatusOptions = [
+  { label: "All statuses", value: "all" },
+  { label: "Outstanding", value: "PENDING" },
+  { label: "Overdue Grace", value: "OVERDUE_GRACE" },
+  { label: "Defaulted", value: "DEFAULTED" },
+  { label: "Bad Debt", value: "BAD_DEBT" },
+  { label: "Completed", value: "COMPLETED" },
   { label: "Expired", value: "EXPIRED" },
 ];
 
@@ -39,11 +41,13 @@ export function PaymentPlansFilters({
           <Filter className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
 
           <select
-            value={filters.status}
-            onChange={(event) => onFilterChange("status", event.target.value)}
-            className="w-full bg-slate-50 border-none rounded-2xl py-3 pl-10 pr-10 text-sm font-bold appearance-none focus:ring-2 focus:ring-indigo-500/20 cursor-pointer"
+            value={filters.collectionStatus}
+            onChange={(event) =>
+              onFilterChange("collectionStatus", event.target.value)
+            }
+            className="w-full bg-slate-50 border-none rounded-2xl py-3 px-4 text-sm font-bold appearance-none focus:ring-2 focus:ring-indigo-500/20 cursor-pointer"
           >
-            {statusOptions.map((item) => (
+            {collectionStatusOptions.map((item) => (
               <option key={item.value} value={item.value}>
                 {item.label}
               </option>
