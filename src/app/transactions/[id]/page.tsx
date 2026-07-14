@@ -44,7 +44,10 @@ export default function PaymentDetailPage() {
 
       {payment.isInstallmentPayment && payment.matchedInstallment && (
         <PaymentInstallmentContextCard
-          installment={payment.matchedInstallment}
+          installment={{
+            ...(payment.matchedInstallment || {}),
+            displayCurrency: payment.currency || "",
+          }}
         />
       )}
 

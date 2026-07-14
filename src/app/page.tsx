@@ -582,7 +582,7 @@ export default function DashboardPage() {
 
                         <td className="px-4 py-4 text-right">
                           <Link
-                            href={`/payments/${transaction.id}?source=${transaction.source || "unified"}`}
+                            href={`/transactions/${transaction.id}?source=${transaction.source || "unified"}`}
                             className="inline-flex items-center gap-1 text-[10px] font-black text-indigo-600 hover:text-indigo-800 uppercase"
                           >
                             Details

@@ -4,6 +4,7 @@ import { CreditCard } from "lucide-react";
 
 import { cn, formatDate, formatPrice } from "@/lib/utils";
 import { Transaction } from "@/types";
+import { formatTransactionAmount } from "@/lib/payment-helpers";
 
 type StudentTransactionHistoryProps = {
   transactions: Transaction[];
@@ -52,7 +53,7 @@ export function StudentTransactionHistory({
                   </TableCell>
 
                   <TableCell className="font-black text-slate-900">
-                    {formatPrice(Number(transaction.amount || 0))}
+                    {formatTransactionAmount(transaction)}
                   </TableCell>
 
                   <TableCell>
