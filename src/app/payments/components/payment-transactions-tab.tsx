@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { CheckCircle2, Plus } from "lucide-react";
 
-import { formatDate, formatPrice } from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
 import { PaymentPlanRecord, Transaction } from "@/types";
 import { usePaymentPlanActions } from "../hooks/use-payment-plan-actions";
 import { AddPaymentTransactionModal } from "./add-payment-transaction-modal";
@@ -142,7 +142,7 @@ function PaymentTransactionCard({
 
       <div className="flex flex-wrap items-center gap-4">
         <p className="text-lg font-black text-slate-900">
-          {formatPrice(transaction.amount)}
+          {transaction.displayAmountFormatted}
         </p>
 
         <span className="text-[10px] font-black uppercase text-indigo-600">
