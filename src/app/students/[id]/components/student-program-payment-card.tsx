@@ -5,6 +5,7 @@ import { Banknote, CalendarDays, CreditCard, WalletCards } from "lucide-react";
 import { cn, formatDate, formatPrice } from "@/lib/utils";
 import { ChangeStudentCourseCohortModal } from "./change-student-course-cohort-modal";
 import { RemoveStudentCourseModal } from "./remove-student-course-modal";
+import { formatMoneyAmount } from "@/lib/payment-helpers";
 
 type StudentProgramPaymentCardProps = {
   student: any;
@@ -34,9 +35,31 @@ export function StudentProgramPaymentCard({
   const installments =
     courseStats.installments || paymentStatus?.paymentInstallments || [];
 
-  const amountPaid = Number(courseStats.amountPaid || 0);
-  const totalAmount = Number(courseStats.totalAmount || 0);
-  const pendingAmount = Math.max(totalAmount - amountPaid, 0);
+  const amountPaid = Number(
+    paymentStatus?.totals?.paidAmount ?? courseStats.amountPaid ?? 0,
+  );
+
+  const totalAmount = Number(
+    paymentStatus?.totals?.expectedAmount ?? courseStats.totalAmount ?? 0,
+  );
+
+  const pendingAmount = Number(
+    paymentStatus?.totals?.pendingAmount ??
+      courseStats.pendingAmount ??
+      Math.max(totalAmount - amountPaid, 0),
+  );
+
+  const amountPaidDisplay =
+    paymentStatus?.totals?.paidAmountFormatted ||
+    courseStats.amountPaidFormatted;
+
+  const totalAmountDisplay =
+    paymentStatus?.totals?.expectedAmountFormatted ||
+    courseStats.totalAmountFormatted;
+
+  const pendingAmountDisplay =
+    paymentStatus?.totals?.pendingAmountFormatted ||
+    courseStats.pendingAmountFormatted;
 
   const statusLabel =
     courseStats.paymentStatus || paymentStatus?.status || "UNKNOWN";
@@ -101,21 +124,21 @@ export function StudentProgramPaymentCard({
         <div className="grid gap-3 md:grid-cols-3">
           <PaymentMetric
             label="Amount Paid"
-            value={formatPrice(amountPaid)}
+            value={amountPaidDisplay}
             icon={<Banknote className="h-4 w-4" />}
             tone="success"
           />
 
           <PaymentMetric
             label="Pending"
-            value={formatPrice(pendingAmount)}
+            value={pendingAmountDisplay}
             icon={<WalletCards className="h-4 w-4" />}
             tone={pendingAmount > 0 ? "warning" : "success"}
           />
 
           <PaymentMetric
             label="Total"
-            value={formatPrice(totalAmount)}
+            value={totalAmountDisplay}
             icon={<CreditCard className="h-4 w-4" />}
             tone="neutral"
           />
@@ -148,7 +171,15 @@ export function StudentProgramPaymentCard({
 
                   <div className="text-right">
                     <p className="text-xs font-black text-slate-900">
-                      {formatPrice(Number(installment.amount || 0))}
+                      {installment.displayAmountFormatted ||
+                        formatMoneyAmount(
+                          Number(
+                            installment.displayAmount ??
+                              installment.amount ??
+                              0,
+                          ),
+                          installment.displayCurrency,
+                        )}
                     </p>
 
                     <span
