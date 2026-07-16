@@ -63,8 +63,6 @@ export function StudentProfilePage({ studentId }: StudentProfilePageProps) {
           purchasedCourses={purchasedCourses}
         />
       </div>
-
-      <StudentTransactionHistory transactions={transactions} />
     </div>
   );
 }
