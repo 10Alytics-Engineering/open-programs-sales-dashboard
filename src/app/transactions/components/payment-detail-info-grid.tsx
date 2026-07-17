@@ -11,7 +11,6 @@ type PaymentDetailInfoGridProps = {
 export function PaymentDetailInfoGrid({ payment }: PaymentDetailInfoGridProps) {
   const user = payment.paymentStatus?.user;
   const course = payment.paymentStatus?.course;
-  const cohort = payment.paymentStatus?.cohort;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -28,10 +27,7 @@ export function PaymentDetailInfoGrid({ payment }: PaymentDetailInfoGridProps) {
       <PaymentDetailInfoCard
         icon={<BookOpen className="w-5 h-5 md:w-6 md:h-6" />}
         title="Course"
-        lines={[
-          course?.title || "No course attached",
-          cohort?.name ? `Cohort: ${cohort.name}` : "No cohort assigned",
-        ]}
+        lines={[course?.title || "No course attached"]}
         tone="violet"
       />
 
