@@ -6,22 +6,13 @@ type PaymentTransactionMetadataCardProps = {
   metadata: Record<string, any>;
 };
 
-const HIDDEN_METADATA_KEYS = new Set([
-  "authorizationUrl",
-  "paymentLink",
-  "checkoutUrl",
-
-  "userId",
-  "courseId",
-
+const DISPLAY_METADATA_KEYS = new Set([
+  "courseName",
   "cohortName",
-  "paymentPlan",
-  "planType",
-  "paymentType",
-
-  "amountPerInstallment",
-  "isIWD",
-  "is_iwd",
+  "installmentNumber",
+  "installmentsCount",
+  "selectedCurrency",
+  "selectedProvider",
 ]);
 
 export function PaymentTransactionMetadataCard({
@@ -31,9 +22,9 @@ export function PaymentTransactionMetadataCard({
   const metadataEntries = Object.entries(metadata || {}).filter(
     ([key, value]) => {
       if (value === null || value === undefined || value === "") return false;
-      if (HIDDEN_METADATA_KEYS.has(key)) return false;
+      if (DISPLAY_METADATA_KEYS.has(key)) return true;
 
-      return true;
+      return false;
     },
   );
 
